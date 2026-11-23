@@ -92,15 +92,31 @@ def parse_personal_daily(day: date, sleep: Any, hrv: Any, summary: Any, body_bat
     m.hrv_ms = find_value(hrv, ("lastNightAvg", "lastNightAverage"))
     s = pick_day(summary, iso)
     m.resting_hr = find_value(s, ("restingHeartRate", "restingHeartRateValue", "restingValue"))
-    stress = find_value(s, ("averageStressLevel", "avgStressLevel", "overallStressLevel"))
+    stress = find_value((s or {}).get("stress") if isinstance(s, dict) else None, ("avgLevel",)) \
+        or find_value(s, ("averageStressLevel", "avgStressLevel", "overallStressLevel"))
     m.stress_avg = stress if stress is not None and stress >= 0 else None
     steps = find_value(s, ("totalSteps", "steps"))
     m.steps = int(steps) if steps is not None else None
     bb = pick_day(body_battery, iso)
-    m.body_battery = find_value(s, ("bodyBatteryAtWakeTime",)) or find_value(
-        bb, ("bodyBatteryAtWakeTime", "atWakeTime", "startOfDayValue", "highestValue", "bodyBatteryHighestValue",
-             "highest", "max"))
+    wake_ms = find_value(sleep, ("sleepEndTimestampGMT",))
+    m.body_battery = body_battery_at(bb, wake_ms) or find_value(
+        (s or {}).get("bodyBattery") if isinstance(s, dict) else None, ("maxValue",)) or find_value(
+        bb, ("bodyBatteryAtWakeTime", "atWakeTime", "startOfDayValue", "highestValue", "maxValue"))
     return m
+
+
+def body_battery_at(bb: Any, ts_ms: float | None) -> float | None:
+    """Body Battery zum Aufwachzeitpunkt aus bodyBatteryValuesArray [[ms, Wert], ...]."""
+    if not isinstance(bb, dict) or not ts_ms:
+        return None
+    values = [v for v in bb.get("bodyBatteryValuesArray") or []
+              if isinstance(v, list) and len(v) >= 2 and isinstance(v[1], (int, float))]
+    if not values:
+        return None
+    # letzter Messpunkt bis 30 min nach dem Aufwachen, sonst der nächstgelegene
+    before = [v for v in values if v[0] <= ts_ms + 30 * 60 * 1000]
+    point = max(before, key=lambda v: v[0]) if before else min(values, key=lambda v: abs(v[0] - ts_ms))
+    return float(point[1])
 
 
 def find_value_dict(data: Any, key: str) -> Any:

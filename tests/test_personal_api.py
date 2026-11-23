@@ -42,6 +42,18 @@ def test_parse_personal_daily():
     assert (m.sleep_hours, m.sleep_score, m.hrv_ms, m.resting_hr, m.steps, m.body_battery) == (7.0, 77, 61, 50, 8000, 88)
 
 
+def test_parse_real_response_shape():
+    # Aufbau wie von der echten Personal API (Werte erfunden)
+    summary = {"data": [{"calendarDate": "2026-11-22", "movement": {"steps": {"goal": 8000, "value": 4321}},
+                         "heartRate": {"minValue": 45, "maxValue": 120, "restingValue": 52},
+                         "stress": {"avgLevel": 31, "maxLevel": 90},
+                         "bodyBattery": {"minValue": 20, "maxValue": 95, "latestValue": 30}}]}
+    bb = [{"date": "2026-11-22", "bodyBatteryValuesArray": [[1_000_000, 40], [5_000_000, 88], [9_000_000, 70]]}]
+    sleep = {"sleepTimeSeconds": 28800, "sleepEndTimestampGMT": 5_000_000, "sleepScores": {"overall": {"value": 80}}}
+    m = parse_personal_daily(date(2026, 11, 22), sleep, {"hrvSummary": {"lastNightAvg": 50}}, summary, bb)
+    assert (m.steps, m.resting_hr, m.stress_avg, m.body_battery, m.sleep_hours) == (4321, 52, 31, 88, 8.0)
+
+
 def test_token_exchange_and_requests(tmp_path, monkeypatch):
     calls = []
     token = _jwt(time.time() + 24 * 3600)
