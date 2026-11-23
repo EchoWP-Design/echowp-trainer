@@ -186,6 +186,29 @@ class TodayScreen extends StatelessWidget {
             child: nut == null
                 ? const Text('Gewicht im Journal oder unter „Daten“ eintragen.', style: TextStyle(color: echoMuted))
                 : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Builder(builder: (_) {
+                      final eaten = st.foodTotals(iso(d));
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          Text(
+                            'Gegessen ${eaten.kcal.round()} von ${nut.kcal} kcal · '
+                            'Protein ${eaten.protein.round()} von ${nut.proteinG} g',
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          const SizedBox(height: 6),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(6),
+                            child: LinearProgressIndicator(
+                              value: (eaten.kcal / nut.kcal).clamp(0, 1).toDouble(),
+                              minHeight: 10,
+                              color: echoYellow,
+                              backgroundColor: echoSurface2,
+                            ),
+                          ),
+                        ]),
+                      );
+                    }),
                     TileGrid(children: [
                       StatTile('Kalorien', '${nut.kcal}', unit: 'kcal'),
                       StatTile('Protein', '${nut.proteinG}', unit: 'g'),

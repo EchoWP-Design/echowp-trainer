@@ -83,6 +83,32 @@ const weekSchema = {
   },
 };
 
+const foodSchema = {
+  'type': 'object',
+  'additionalProperties': false,
+  'required': ['items', 'note'],
+  'properties': {
+    'items': {
+      'type': 'array',
+      'items': {
+        'type': 'object',
+        'additionalProperties': false,
+        'required': ['name', 'amount', 'kcal', 'protein', 'carbs', 'fat', 'fiber'],
+        'properties': {
+          'name': {'type': 'string', 'description': 'kurzer deutscher Name'},
+          'amount': {'type': 'string', 'description': 'Menge, z. B. "2 Stück" oder "150 g"'},
+          'kcal': {'type': 'number'},
+          'protein': {'type': 'number', 'description': 'Gramm'},
+          'carbs': {'type': 'number', 'description': 'Gramm'},
+          'fat': {'type': 'number', 'description': 'Gramm'},
+          'fiber': {'type': 'number', 'description': 'Gramm'},
+        },
+      },
+    },
+    'note': {'type': 'string', 'description': 'kurzer Hinweis zur Schätzung, leer wenn nichts zu sagen ist'},
+  },
+};
+
 class CoachError implements Exception {
   final String message;
   CoachError(this.message);
@@ -208,6 +234,22 @@ class CoachClient {
       [for (final q in (data['questions'] as List).take(2)) q.toString()],
       sessions,
       source: 'claude',
+    );
+  }
+
+  /// Schätzt Kalorien und Makros aus Freitext. [known] sind gemerkte Lebensmittel mit Werten.
+  Future<(List<Map<String, dynamic>>, String)> estimateFood(String text, List<Map<String, dynamic>> known) async {
+    final prompt = 'Schätze Kalorien und Makronährstoffe für diese Mahlzeit. Zerlege sie in einzelne '
+        'Lebensmittel mit realistischer Menge (deutsche Portionsgrößen, Werte wie BLS/Packungsangaben). '
+        'Wenn ein Lebensmittel in meinen gemerkten Lebensmitteln steht, übernimm dessen Werte.\n\n'
+        'Mahlzeit: $text\n\nGemerkte Lebensmittel:\n${jsonEncode(known)}';
+    final raw = await call([
+      {'role': 'user', 'content': prompt}
+    ], maxTokens: 3000, schema: foodSchema);
+    final data = jsonDecode(raw) as Map<String, dynamic>;
+    return (
+      [for (final i in data['items'] as List) Map<String, dynamic>.from(i as Map)],
+      (data['note'] as String?) ?? '',
     );
   }
 

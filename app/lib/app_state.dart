@@ -6,11 +6,13 @@ import 'package:http/http.dart' as http;
 
 import 'logic/dates.dart';
 import 'logic/endurance.dart';
+import 'logic/food.dart';
 import 'logic/nutrition.dart';
 import 'logic/planner.dart';
 import 'logic/readiness.dart';
 import 'logic/streaks.dart';
 import 'services/coach.dart';
+import 'services/food_lookup.dart';
 import 'services/garmin.dart';
 import 'services/storage.dart';
 
@@ -317,6 +319,91 @@ class AppState extends ChangeNotifier {
     return calculateNutrition(w, Map<String, dynamic>.from(store.setting('profile') as Map), trainingLoad(d), today: d);
   }
 
+  // ---------------------------------------------------------------- Essen / Food Memory
+  List<FoodEntry> foodOn(String d) {
+    final list = [
+      for (final e in (store.section('food')[d] as List?) ?? []) FoodEntry.fromJson((e as Map).cast<String, dynamic>())
+    ];
+    list.sort((a, b) => a.time.compareTo(b.time));
+    return list;
+  }
+
+  FoodTotals foodTotals(String d) => totalsOf(foodOn(d));
+
+  int _idSeq = 0;
+  String _newId() => '${clock().microsecondsSinceEpoch}-${_idSeq++}';
+
+  /// Trägt Einträge für einen Tag ein und merkt sie sich im Food Memory.
+  void addFood(String d, List<FoodEntry> entries) {
+    final list = (store.section('food')[d] as List?) ?? [];
+    final memory = store.section('food_memory');
+    final now = hhmm(clock());
+    for (final e in entries) {
+      final entry = e.copyWith(id: _newId(), date: d, time: e.time.isEmpty ? now : e.time);
+      list.add(entry.toJson());
+      remember(memory, entry);
+    }
+    store.section('food')[d] = list;
+    store.save();
+    notifyListeners();
+  }
+
+  void removeFood(String d, String id) {
+    final list = (store.section('food')[d] as List?) ?? [];
+    list.removeWhere((e) => e['id'] == id);
+    store.section('food')[d] = list;
+    store.save();
+    notifyListeners();
+  }
+
+  List<Map<String, dynamic>> foodMemory({String filter = '', int limit = 30}) =>
+      memoryList(store.section('food_memory'), filter: filter, limit: limit);
+
+  void forgetFood(Map<String, dynamic> m) {
+    store.section('food_memory').remove(memoryKey(m['name'] as String, (m['amount'] as String?) ?? ''));
+    store.save();
+    notifyListeners();
+  }
+
+  /// Produkt zum Barcode: erst aus dem eigenen Speicher, sonst von Open Food Facts.
+  Future<Product?> lookupBarcode(String code) async {
+    final cached = store.section('products')[code];
+    if (cached != null) return Product.fromJson((cached as Map).cast<String, dynamic>());
+    final p = await _run('Produkt wird gesucht …', () => FoodLookup(client: httpClient).byBarcode(code));
+    if (p != null) saveProduct(p);
+    return p;
+  }
+
+  void saveProduct(Product p) {
+    store.section('products')[p.code] = p.toJson();
+    store.save();
+  }
+
+  /// Claude schätzt Kalorien/Makros aus Freitext; das Ergebnis wird erst nach Bestätigung gespeichert.
+  Future<(List<FoodEntry>, String)?> estimateFood(String text) {
+    final coach = _coach;
+    if (coach == null) {
+      lastError = 'Für die KI-Schätzung den Anthropic-API-Key unter „Daten“ eintragen.';
+      notifyListeners();
+      return Future.value(null);
+    }
+    return _run('Claude schätzt die Kalorien …', () async {
+      final known = [
+        for (final m in foodMemory(limit: 60))
+          {
+            for (final k in ['name', 'amount', 'kcal', 'protein', 'carbs', 'fat', 'fiber']) k: m[k]
+          }
+      ];
+      final (items, note) = await coach.estimateFood(text, known);
+      return (
+        [
+          for (final i in items) FoodEntry.fromJson({...i, 'id': '', 'date': iso(today), 'time': '', 'source': 'ki'})
+        ],
+        note,
+      );
+    });
+  }
+
   // ---------------------------------------------------------------- Gamification
   List<HabitRow> habits(DateTime d) {
     final start = addDays(d, -27);
@@ -402,6 +489,15 @@ class AppState extends ChangeNotifier {
       'zone2_puls': [zone2.$1, zone2.$2],
       'maersche_4_wochen': marches(d).toJson(),
       'ernaehrung_ziele': nutritionFor(d)?.toJson(),
+      'essen_heute': {
+        'summe': foodTotals(iso(d)).toJson(),
+        'eintraege': [for (final e in foodOn(iso(d))) '${e.time} ${e.name} ${e.amount} (${e.kcal.round()} kcal)'],
+      },
+      'essen_7_tage': [
+        for (var i = 6; i >= 1; i--)
+          if (foodOn(iso(addDays(d, -i))).isNotEmpty)
+            {'date': iso(addDays(d, -i)), ...foodTotals(iso(addDays(d, -i))).toJson()}
+      ],
     };
   }
 }

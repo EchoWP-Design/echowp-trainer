@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'app_state.dart';
 import 'screens/coach_screen.dart';
 import 'screens/data_screen.dart';
+import 'screens/food_screen.dart';
 import 'screens/journal_screen.dart';
 import 'screens/today_screen.dart';
 import 'screens/week_screen.dart';
@@ -81,7 +82,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final st = context.watch<AppState>();
-    const pages = [TodayScreen(), WeekScreen(), JournalScreen(), CoachScreen(), DataScreen()];
+    const pages = [TodayScreen(), WeekScreen(), FoodScreen(), JournalScreen(), CoachScreen(), DataScreen()];
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -108,6 +109,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         destinations: const [
           NavigationDestination(icon: Icon(Icons.bolt), label: 'Heute'),
           NavigationDestination(icon: Icon(Icons.calendar_view_week), label: 'Woche'),
+          NavigationDestination(icon: Icon(Icons.restaurant), label: 'Essen'),
           NavigationDestination(icon: Icon(Icons.edit_note), label: 'Journal'),
           NavigationDestination(icon: Icon(Icons.forum_outlined), label: 'Coach'),
           NavigationDestination(icon: Icon(Icons.tune), label: 'Daten'),

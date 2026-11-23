@@ -85,7 +85,18 @@ class Store {
   }
 
   static Map<String, dynamic> _withDefaults(Map<String, dynamic> d) {
-    for (final k in ['metrics', 'activities', 'journal', 'plans', 'briefings', 'chat', 'settings']) {
+    for (final k in [
+      'metrics',
+      'activities',
+      'journal',
+      'plans',
+      'briefings',
+      'chat',
+      'settings',
+      'food',
+      'food_memory',
+      'products'
+    ]) {
       d[k] = Map<String, dynamic>.from((d[k] as Map?) ?? {});
     }
     return d;

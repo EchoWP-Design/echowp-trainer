@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:echowp_trainer/app_state.dart';
 import 'package:echowp_trainer/logic/dates.dart';
+import 'package:echowp_trainer/logic/food.dart';
 import 'package:echowp_trainer/main.dart';
 import 'package:echowp_trainer/services/storage.dart';
 import 'package:flutter/material.dart';
@@ -200,11 +201,21 @@ void main() {
       await st.sync();
       await st.planWeek(weekStartOf(st.today));
     });
+    st.addFood('2026-11-23', [
+      const FoodEntry(
+          id: '',
+          date: '',
+          time: '',
+          name: 'Sehr langer Produktname Skyr Natur Hochprotein Vanille',
+          amount: '500 g',
+          kcal: 315,
+          protein: 55)
+    ]);
     st.saveJournal('2026-11-23', {'weight_kg': 84.0, 'mood': 6});
     await tester.pumpWidget(TrainerApp(state: st));
     await tester.pumpAndSettle();
     expect(find.text('BEREITSCHAFT'), findsOneWidget);
-    for (final tab in ['Woche', 'Journal', 'Coach', 'Daten', 'Heute']) {
+    for (final tab in ['Woche', 'Essen', 'Journal', 'Coach', 'Daten', 'Heute']) {
       await tester.tap(find.text(tab).last);
       await tester.pumpAndSettle();
       await tester.drag(find.byType(Scrollable).first, const Offset(0, -2000));

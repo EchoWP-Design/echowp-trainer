@@ -28,13 +28,11 @@ class _JournalScreenState extends State<JournalScreen> {
   final Map<String, double?> _vals = {};
   final _weight = TextEditingController();
   final _notes = TextEditingController();
-  final _food = TextEditingController();
 
   @override
   void dispose() {
     _weight.dispose();
     _notes.dispose();
-    _food.dispose();
     super.dispose();
   }
 
@@ -47,7 +45,6 @@ class _JournalScreenState extends State<JournalScreen> {
     }
     _weight.text = j['weight_kg'] != null ? fmtNum(j['weight_kg'] as num, digits: 1) : '';
     _notes.text = (j['notes'] as String?) ?? '';
-    _food.text = (j['food_notes'] as String?) ?? '';
   }
 
   @override
@@ -110,13 +107,6 @@ class _JournalScreenState extends State<JournalScreen> {
               maxLines: 5,
               decoration: const InputDecoration(labelText: 'Notizen (Knie, Schlaf, Stimmung …)'),
             ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: _food,
-              minLines: 2,
-              maxLines: 5,
-              decoration: const InputDecoration(labelText: 'Essen heute'),
-            ),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
@@ -127,7 +117,6 @@ class _JournalScreenState extends State<JournalScreen> {
                     for (final s in _scales) s.$1: _vals[s.$1]?.round(),
                     'weight_kg': w,
                     'notes': _notes.text.trim(),
-                    'food_notes': _food.text.trim(),
                   });
                   showSnack(context, 'Journal gespeichert. Score: ${st.readinessFor(day).score ?? '–'}');
                 },

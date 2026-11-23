@@ -1,7 +1,7 @@
 name: echowp_trainer
 description: EchoWP Trainer – Performance-Coach mit Garmin und Claude für Android.
 publish_to: 'none'
-version: 1.0.0+1
+version: 1.1.0+1
 
 environment:
   sdk: '>=3.4.0 <4.0.0'
@@ -16,6 +16,7 @@ dependencies:
   flutter_secure_storage: ^9.2.2
   path_provider: ^2.1.4
   intl: any
+  mobile_scanner: ^7.5.0
 
 dev_dependencies:
   flutter_test:

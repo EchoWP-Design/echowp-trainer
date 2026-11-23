@@ -7,7 +7,7 @@ Video [„Garmin + Claude = mein eigener Performance-Coach“](https://www.youtu
 Garmin sammelt die Daten, die App macht daraus einen Tagesplan, eine Trainingswoche und
 einen Coach, mit dem man reden kann.
 
-**Aktuelle Version: 1.0.0** (Android-App) – Download unter [Releases](https://github.com/EchoWP-Design/echowp-trainer/releases/latest)
+**Aktuelle Version: 1.1.0** (Android-App) – Download unter [Releases](https://github.com/EchoWP-Design/echowp-trainer/releases/latest)
 
 ![Dashboard](docs/img/heute.png)
 
@@ -63,6 +63,11 @@ Claude. Daten bleiben auf dem Handy, die Schlüssel liegen im sicheren Speicher 
    Die App lädt sofort die letzten 14 Tage.
 3. Im selben Reiter den Anthropic-API-Key für den KI-Coach einfügen.
 4. Profil (Größe, Geburtsjahr, Geschlecht, Gewicht) eintragen, dann unter **Woche** planen.
+
+**Essen (ab 1.1):** Kalorien und Makros zählen gegen die Tagesziele. Eintragen per Barcode-Scan
+(Open Food Facts, ganze Packung, Portion oder Gramm), per Freitext mit KI-Schätzung durch Claude
+oder von Hand. Das Food Memory merkt sich alles Gegessene für den nächsten Eintrag mit einem Tipp.
+Unbekannte Barcodes tippst du einmal ab, danach kennt die App das Produkt.
 
 Beim Öffnen synchronisiert die App automatisch, wenn der letzte Abruf älter als eine Stunde ist.
 

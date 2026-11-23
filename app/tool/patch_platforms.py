@@ -28,6 +28,8 @@ def manifest(t: str) -> str:
     # Keine Android-Cloud-/ADB-Sicherung (Schlüssel, Gesundheitsdaten)
     if "android:allowBackup" not in t:
         t = t.replace("<application", '<application\n        android:allowBackup="false"\n        android:fullBackupContent="false"', 1)
+    if "android.permission.CAMERA" not in t:
+        t = t.replace("<application", '<uses-permission android:name="android.permission.CAMERA"/>\n    <application', 1)
     if "android.permission.INTERNET" not in t:
         t = t.replace("<application", '<uses-permission android:name="android.permission.INTERNET"/>\n    <application', 1)
     return t
