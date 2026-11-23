@@ -179,16 +179,17 @@ class TodayScreen extends StatelessWidget {
                 )
             ]),
           ),
-          SectionCard(
-            title: 'Märsche (4 Wochen)',
-            child: TileGrid(children: [
-              StatTile('Anzahl', '${marches.count}'),
-              StatTile('Gesamt', fmtNum(marches.totalKm, digits: 1), unit: 'km'),
-              StatTile('Längster', fmtNum(marches.longestKm, digits: 1), unit: 'km'),
-              StatTile('Ø Tempo', marches.avgPace ?? '–'),
-              StatTile('Zone 2', '${st.zone2.$1}–${st.zone2.$2}', unit: 'bpm'),
-            ]),
-          ),
+          if (marches.count > 0 || st.disciplines.any((g) => g.discipline.kind == 'marsch'))
+            SectionCard(
+              title: 'Märsche (4 Wochen)',
+              child: TileGrid(children: [
+                StatTile('Anzahl', '${marches.count}'),
+                StatTile('Gesamt', fmtNum(marches.totalKm, digits: 1), unit: 'km'),
+                StatTile('Längster', fmtNum(marches.longestKm, digits: 1), unit: 'km'),
+                StatTile('Ø Tempo', marches.avgPace ?? '–'),
+                StatTile('Zone 2', '${st.zone2.$1}–${st.zone2.$2}', unit: 'bpm'),
+              ]),
+            ),
           SectionCard(
             title: 'Ernährung heute',
             trailing: nut == null

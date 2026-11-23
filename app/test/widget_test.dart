@@ -144,7 +144,7 @@ void main() {
     // Token wird nur einmal geholt und wiederverwendet
     expect(log.where((l) => l.endsWith('/token')).length, 1);
     expect(await st.secrets.read('garmin_token'), isNotNull);
-    expect(st.goalsFor(DateTime(2026, 11, 22)).firstWhere((g) => g.key == 'march').done, 1);
+    expect(st.goalsFor(DateTime(2026, 11, 22)).firstWhere((g) => g.key == 'spazieren').done, 1);
   });
 
   test('Ohne Key kein Sync, verständliche Meldung', () async {

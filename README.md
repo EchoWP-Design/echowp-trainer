@@ -7,7 +7,7 @@ Video [„Garmin + Claude = mein eigener Performance-Coach“](https://www.youtu
 Garmin sammelt die Daten, die App macht daraus einen Tagesplan, eine Trainingswoche und
 einen Coach, mit dem man reden kann.
 
-**Aktuelle Version: 1.2.0** (Android-App) – Download unter [Releases](https://github.com/EchoWP-Design/echowp-trainer/releases/latest)
+**Aktuelle Version: 1.3.0** (Android-App) – Download unter [Releases](https://github.com/EchoWP-Design/echowp-trainer/releases/latest)
 
 ![Dashboard](docs/img/heute.png)
 
@@ -17,11 +17,14 @@ einen Coach, mit dem man reden kann.
   Gefühl. Das Gefühl zählt am meisten und deckelt den Score, wenn Garmin dich fit sieht,
   du dich aber nicht so fühlst. Ab 80 voll belastbar, unter 50 Last reduzieren.
 - **Coaching-Briefing** für den Tag: wie geplant, angepasst (RPE, Sätze) oder Recovery.
-- **Wochenplanung** auf Knopfdruck. Schwerpunkt Functional Fitness (Eigengewicht,
-  Kettlebell, Gewichte), Ausdauer als Steigungsgehen auf dem Laufband, am Wochenende ein
-  langer Marsch mit Rucksack. Knieschonend: kaum Laufen, keine Sprünge. 4-Wochen-Zyklus
-  mit Deload, Entlastungswoche bei niedriger Bereitschaft. Plant um Termine aus deinem
-  Kalender herum.
+- **Wochenplanung** auf Knopfdruck aus bis zu **vier Disziplinen** mit Anzahl pro Woche
+  (ab App 1.3), zur Auswahl: Functional Fitness, Krafttraining, Kettlebell, Eigengewicht,
+  Hyrox, HIIT, Kardio, Steigungstraining, Laufband, Jogging, langer Marsch, Rucking,
+  Spazierengehen, Rudern, Radfahren, Schwimmen, Yoga/Mobility. Kraft und Intervalle abends,
+  Ausdauer morgens, lange Märsche am Wochenende. Schalter „Knieschonend“: kaum Laufen,
+  Laufanteile als Gehen oder Ergometer. Sprünge plant die App nie. 4-Wochen-Zyklus mit Deload,
+  Entlastungswoche bei niedriger Bereitschaft. Die Wochenziele auf der Startseite zählen
+  erledigte Einheiten je Disziplin.
 - **Kalender** (Server-Version): Der Plan steht als abonnierbarer iCal-Feed bereit
   (Google Kalender → „Per URL hinzufügen“).
 - **Chat** mit dem Coach, auch um den Wochenplan umzubauen („Montag Termin, verschieb das“).
@@ -88,7 +91,8 @@ Claude. Daten bleiben auf dem Handy, die Schlüssel liegen im sicheren Speicher 
    Die App lädt sofort die letzten 14 Tage. Für Amazfit, Suunto & Co. zusätzlich
    **Health Connect verbinden** (siehe oben).
 3. Im selben Reiter den Anthropic-API-Key für den KI-Coach einfügen.
-4. Profil (Größe, Geburtsjahr, Geschlecht, Gewicht) eintragen, dann unter **Woche** planen.
+4. Profil (Größe, Geburtsjahr, Geschlecht, Gewicht) eintragen, unter **Training: Disziplinen
+   pro Woche** bis zu vier Disziplinen wählen, dann unter **Woche** planen.
 
 **Essen (ab 1.1):** Kalorien und Makros zählen gegen die Tagesziele. Eintragen per Barcode-Scan
 (Open Food Facts, ganze Packung, Portion oder Gramm), per Freitext mit KI-Schätzung durch Claude

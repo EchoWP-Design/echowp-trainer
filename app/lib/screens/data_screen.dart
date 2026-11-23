@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../app_state.dart';
 import '../logic/dates.dart';
+import '../logic/disciplines.dart';
 import '../main.dart';
 import '../services/coach.dart';
 import '../services/updater.dart';
@@ -33,7 +34,12 @@ class _DataScreenState extends State<DataScreen> {
   Widget build(BuildContext context) {
     final st = context.watch<AppState>();
     final profile = Map<String, dynamic>.from(st.store.setting('profile') as Map);
-    final goals = Map<String, dynamic>.from(st.store.setting('goals') as Map);
+    final slots = <(Discipline?, int)>[
+      for (final g in st.disciplines) (g.discipline, g.perWeek),
+    ];
+    while (slots.length < maxDisciplines) {
+      slots.add((null, 2));
+    }
     final sync = st.lastSync;
 
     void setProfile(String k, dynamic v) {
@@ -42,9 +48,12 @@ class _DataScreenState extends State<DataScreen> {
       setState(() {});
     }
 
-    void setGoal(String k, int v) {
-      goals[k] = v;
-      st.store.setSetting('goals', goals);
+    void setSlot(int i, Discipline? d, int n) {
+      slots[i] = (d, d == null ? n : n.clamp(1, d.maxPerWeek));
+      st.setDisciplines([
+        for (final s in slots)
+          if (s.$1 != null) DisciplineGoal(s.$1!, s.$2)
+      ]);
       setState(() {});
     }
 
@@ -234,12 +243,53 @@ class _DataScreenState extends State<DataScreen> {
           ]),
         ),
         SectionCard(
-          title: 'Trainingsziele pro Woche',
+          title: 'Training: Disziplinen pro Woche',
           child: Column(children: [
-            _stepper(
-                'Functional/Kraft', (goals['strength'] as num?)?.toInt() ?? 0, 0, 6, (v) => setGoal('strength', v)),
-            _stepper('Steigungsgehen', (goals['cardio'] as num?)?.toInt() ?? 0, 0, 6, (v) => setGoal('cardio', v)),
-            _stepper('Langer Marsch', (goals['march'] as num?)?.toInt() ?? 0, 0, 2, (v) => setGoal('march', v)),
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text('Bis zu vier Disziplinen, je mit Anzahl pro Woche. Danach plant die App die Woche.',
+                  style: TextStyle(color: echoMuted, fontSize: 13)),
+            ),
+            for (var i = 0; i < maxDisciplines; i++)
+              Row(children: [
+                Expanded(
+                  child: DropdownButtonFormField<String>(
+                    key: ValueKey('disc-$i-${slots[i].$1?.key}'),
+                    initialValue: slots[i].$1?.key ?? '',
+                    isExpanded: true,
+                    decoration: InputDecoration(labelText: 'Disziplin ${i + 1}'),
+                    items: [
+                      const DropdownMenuItem(value: '', child: Text('– keine –')),
+                      for (final d in disciplineCatalog)
+                        if (d.key == slots[i].$1?.key || !slots.any((s) => s.$1?.key == d.key))
+                          DropdownMenuItem(value: d.key, child: Text(d.label, overflow: TextOverflow.ellipsis)),
+                    ],
+                    onChanged: (v) => setSlot(i, disciplineByKey(v), slots[i].$2),
+                  ),
+                ),
+                IconButton(
+                    onPressed:
+                        slots[i].$1 != null && slots[i].$2 > 1 ? () => setSlot(i, slots[i].$1, slots[i].$2 - 1) : null,
+                    icon: const Icon(Icons.remove_circle_outline, color: echoYellow)),
+                SizedBox(
+                    width: 34,
+                    child: Text(slots[i].$1 == null ? '–' : '${slots[i].$2}×',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 16))),
+                IconButton(
+                    onPressed: slots[i].$1 != null && slots[i].$2 < slots[i].$1!.maxPerWeek
+                        ? () => setSlot(i, slots[i].$1, slots[i].$2 + 1)
+                        : null,
+                    icon: const Icon(Icons.add_circle_outline, color: echoYellow)),
+              ]),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: st.store.setting('knee_friendly') == true,
+              activeThumbColor: echoYellow,
+              title: const Text('Knieschonend planen'),
+              subtitle: const Text('Kaum Laufen, Laufanteile als Gehen oder Ergometer, keine tiefen Ausfallschritte.'),
+              onChanged: (v) => setState(() => st.store.setSetting('knee_friendly', v)),
+            ),
             _stepper('Maximalpuls', (st.store.setting('max_hr') as num?)?.toInt() ?? 190, 140, 220,
                 (v) => setState(() => st.store.setSetting('max_hr', v))),
             const SizedBox(height: 8),
@@ -253,7 +303,7 @@ class _DataScreenState extends State<DataScreen> {
             const SizedBox(height: 8),
             TextFormField(
               initialValue: st.store.setting('march_goal') as String?,
-              decoration: const InputDecoration(labelText: 'Marsch-Ziel'),
+              decoration: const InputDecoration(labelText: 'Persönliches Ziel (z. B. Marsch 25 km, Hyrox-Wettkampf)'),
               onChanged: (v) => st.store.setSetting('march_goal', v),
             ),
           ]),

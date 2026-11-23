@@ -1,6 +1,8 @@
 /// Gewohnheiten, Streaks und Wochenziele.
 library;
 
+import 'disciplines.dart';
+
 import 'dates.dart';
 
 const dailyHabits = [
@@ -53,14 +55,7 @@ class WeekGoal {
   WeekGoal(this.key, this.label, this.done, this.goal);
 }
 
-List<WeekGoal> weekGoals(List<Map<String, dynamic>> weekActs, Map<String, dynamic> goals) {
-  final strength = weekActs.where((a) => a['kind'] == 'kraft').length;
-  final marches = weekActs.where((a) => a['kind'] == 'gehen' && ((a['duration_s'] as num?) ?? 0) >= 3600).length;
-  final cardio = weekActs.where((a) => a['kind'] == 'lauf' || a['kind'] == 'cardio').length;
-  int g(String k) => (goals[k] as num?)?.toInt() ?? 0;
-  return [
-    WeekGoal('strength', 'Functional/Kraft', strength, g('strength')),
-    WeekGoal('cardio', 'Ausdauer', cardio, g('cardio')),
-    WeekGoal('march', 'Langer Marsch', marches, g('march')),
-  ];
+List<WeekGoal> weekGoals(List<Map<String, dynamic>> weekActs, List<DisciplineGoal> goals) {
+  final done = countDone(weekActs, goals);
+  return [for (final g in goals) WeekGoal(g.discipline.key, g.discipline.short, done[g.discipline.key]!, g.perWeek)];
 }

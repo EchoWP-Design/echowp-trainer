@@ -9,6 +9,9 @@ const kindIcons = {
   'intervall': Icons.timer_outlined,
   'marsch': Icons.hiking,
   'mobility': Icons.self_improvement,
+  'lauf': Icons.directions_run,
+  'gehen': Icons.directions_walk,
+  'sonstiges': Icons.sports,
 };
 
 /// Eine geplante Einheit, aufklappbar mit Übungen und Status-Knöpfen.

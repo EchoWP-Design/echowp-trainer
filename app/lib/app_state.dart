@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import 'logic/dates.dart';
+import 'logic/disciplines.dart';
 import 'logic/endurance.dart';
 import 'logic/food.dart';
 import 'logic/nutrition.dart';
@@ -39,6 +40,7 @@ class AppState extends ChangeNotifier {
   DateTime get today => dayOnly(clock());
 
   Future<void> init() async {
+    migrateSettings();
     garminKey = await secrets.read('garmin_key');
     anthropicKey = await secrets.read('anthropic_key');
     notifyListeners();
@@ -90,6 +92,37 @@ class AppState extends ChangeNotifier {
       busyLabel = null;
       notifyListeners();
     }
+  }
+
+  /// Bis 1.2: feste Ziele (Kraft, Steigung, Marsch) und Jans Vorgaben als Standard.
+  /// Bestehende Installationen behalten genau das, neue starten neutral.
+  void migrateSettings() {
+    final s = store.section('settings');
+    if (s.containsKey('disciplines')) return;
+    final used = ['metrics', 'activities', 'journal', 'plans', 'food'].any((k) => store.section(k).isNotEmpty);
+    if (!used) {
+      // Neue Installation: neutrale Auswahl fest speichern, damit später nichts mehr umgestellt wird
+      s['disciplines'] = [for (final g in disciplinesFrom(defaultSettings)) g.toJson()];
+      store.save();
+      return;
+    }
+    final goals = (s['goals'] as Map?) ?? const {'strength': 4, 'cardio': 3, 'march': 1};
+    s['disciplines'] = [for (final g in legacyDisciplines(goals)) g.toJson()];
+    s['knee_friendly'] = true;
+    s.putIfAbsent(
+        'preferences',
+        () => 'Schwerpunkt Functional Fitness: Eigengewicht, Kettlebell, Gewichte. Ausdauer als '
+            'Steigungsgehen auf dem Laufband. Märsche, auch mit Gewicht (Rucking), am Wochenende.');
+    s.putIfAbsent('constraints', () => 'Kniebeschwerden: wenig Laufen, keine Sprünge, keine tiefen Ausfallschritte.');
+    s.putIfAbsent('march_goal', () => 'Langer Marsch 25 km mit 12 kg Rucksack');
+    store.save();
+  }
+
+  List<DisciplineGoal> get disciplines => disciplinesFrom(store.allSettings);
+
+  void setDisciplines(List<DisciplineGoal> list) {
+    store.setSetting('disciplines', [for (final g in list.take(maxDisciplines)) g.toJson()]);
+    notifyListeners();
   }
 
   // ---------------------------------------------------------------- Updates
@@ -542,7 +575,7 @@ class AppState extends ChangeNotifier {
 
   List<WeekGoal> goalsFor(DateTime d) {
     final ws = weekStartOf(d);
-    return weekGoals(activities(ws, addDays(ws, 6)), Map<String, dynamic>.from(store.setting('goals') as Map));
+    return weekGoals(activities(ws, addDays(ws, 6)), disciplines);
   }
 
   MarchStats marches(DateTime d) =>
@@ -608,10 +641,13 @@ class AppState extends ChangeNotifier {
           }
       ],
       'plan_diese_woche': [for (final x in planFor(weekStartOf(d))?.sessions ?? <PlannedSession>[]) x.toJson()],
-      'ziele': s['goals'],
+      'disziplinen': [
+        for (final g in disciplines) {'disziplin': g.discipline.label, 'pro_woche': g.perWeek}
+      ],
+      'knieschonend': s['knee_friendly'] == true,
       'vorlieben': s['preferences'],
       'einschraenkungen': s['constraints'],
-      'marschziel': s['march_goal'],
+      'persoenliches_ziel': s['march_goal'],
       'zone2_puls': [zone2.$1, zone2.$2],
       'maersche_4_wochen': marches(d).toJson(),
       'ernaehrung_ziele': nutritionFor(d)?.toJson(),

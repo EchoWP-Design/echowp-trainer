@@ -10,7 +10,6 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
 
 const defaultSettings = <String, dynamic>{
-  'goals': {'strength': 4, 'cardio': 3, 'march': 1},
   'max_hr': 190,
   'sleep_target_h': 8.0,
   // Freie Trainingsfenster je Wochentag (0 = Montag)
@@ -44,10 +43,15 @@ const defaultSettings = <String, dynamic>{
       ['16:00', '18:00']
     ],
   },
-  'preferences': 'Schwerpunkt Functional Fitness: Eigengewicht, Kettlebell, Gewichte. Ausdauer als '
-      'Steigungsgehen auf dem Laufband. Märsche, auch mit Gewicht (Rucking), am Wochenende.',
-  'constraints': 'Kniebeschwerden: wenig Laufen, keine Sprünge, keine tiefen Ausfallschritte.',
-  'march_goal': 'Langer Marsch 25 km mit 12 kg Rucksack',
+  'disciplines': [
+    {'key': 'functional', 'per_week': 2},
+    {'key': 'kardio', 'per_week': 2},
+    {'key': 'spazieren', 'per_week': 1},
+  ],
+  'knee_friendly': false,
+  'preferences': '',
+  'constraints': '',
+  'march_goal': '',
   'coach_model': 'claude-opus-5-5',
   'profile': {
     'sex': null,

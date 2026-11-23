@@ -2,12 +2,14 @@
 ///
 /// 1. Phase aus mittlerer Bereitschaft und 4-Wochen-Zyklus.
 /// 2. Freie Zeitfenster je Tag aus den Einstellungen.
-/// 3. Langer Marsch (Rucking) aufs Wochenende, dann Functional-Kraft, dann
-///    Steigungsgehen auf dem Laufband, dann Mobility. Wegen Kniebeschwerden
-///    kein Laufen und keine Sprünge.
+/// 3. Bis zu vier gewählte Disziplinen mit Häufigkeit pro Woche: lange Einheiten
+///    aufs Wochenende, Kraft und Intervalle abends, Ausdauer morgens, dann Mobility.
+///    Knieschonend (Einstellung): Laufanteile werden durch Gehen/Ergometer ersetzt.
+///    Sprünge plant die App nie.
 library;
 
 import 'dates.dart';
+import 'disciplines.dart';
 
 const strengthSplits = {
   5: ['Kettlebell Ganzkörper', 'Functional Push', 'Functional Pull', 'Hüfte & Rumpf', 'Carry & Conditioning'],
@@ -57,6 +59,49 @@ const exerciseCatalog = <String, List<(String, int, String)>>{
     ('Copenhagen Plank (kurz)', 3, '20 s/Seite'),
     ('Pallof Press', 3, '10/Seite'),
   ],
+  'Kraft Unterkörper': [
+    ('Kniebeuge auf Box (Langhantel/Goblet)', 4, '6–8'),
+    ('Rumänisches Kreuzheben', 4, '8'),
+    ('Hip Thrust', 3, '10'),
+    ('Beinpresse (begrenzte Tiefe)', 3, '10–12'),
+    ('Wadenheben', 3, '15'),
+    ('Pallof Press', 3, '10/Seite'),
+  ],
+  'Kraft Oberkörper': [
+    ('Bankdrücken / Kurzhantel-Drücken', 4, '6–8'),
+    ('Rudern vorgebeugt', 4, '8'),
+    ('Schulterdrücken', 3, '8–10'),
+    ('Latzug / Klimmzug', 3, '8–10'),
+    ('Face Pulls', 3, '15'),
+    ('Bizeps/Trizeps im Wechsel', 2, '12'),
+  ],
+  'Kraft Ganzkörper': [
+    ('Kreuzheben (Trap Bar)', 4, '5'),
+    ('Kniebeuge auf Box', 3, '8'),
+    ('Bankdrücken', 3, '8'),
+    ('Rudern am Kabel', 3, '10'),
+    ("Farmer's Carry", 3, '40 m'),
+  ],
+  'Eigengewicht Ganzkörper': [
+    ('Liegestütz', 4, '10–15'),
+    ('Klimmzüge / Inverted Row', 4, '6–10'),
+    ('Box Squat Eigengewicht', 3, '15'),
+    ('Glute Bridge einbeinig', 3, '10/Seite'),
+    ('Pike Push-up', 3, '8'),
+    ('Hollow Hold', 3, '30 s'),
+  ],
+  'Hyrox Stationen': [
+    ('SkiErg', 4, '500 m'),
+    ('Schlitten schieben/ziehen (oder KB Carry)', 4, '20 m'),
+    ('Burpee ohne Sprung', 3, '10'),
+    ('Rudern', 4, '500 m'),
+    ('Sandbag Lunges (kurzer Schritt)', 3, '20 m'),
+    ('Wall Balls', 4, '15'),
+  ],
+  'Hyrox Simulation': [
+    ('Laufen', 4, '1 km'),
+    ('je Runde 1 Station: SkiErg, Rudern, Farmer\'s Carry, Wall Balls', 4, 'je 3–4 min'),
+  ],
   'Carry & Conditioning': [
     ('Zirkel 4 Runden: Kettlebell Swing', 4, '15'),
     ('Burpee ohne Sprung', 4, '8'),
@@ -75,7 +120,15 @@ const mobilityExercises = [
   ('Faszienrolle Waden/Oberschenkel', 1, '5 min'),
 ];
 
-const durationMin = {'kraft': 60, 'cardio': 45, 'intervall': 40, 'marsch': 100, 'mobility': 25};
+const durationMin = {
+  'kraft': 60,
+  'cardio': 45,
+  'intervall': 40,
+  'marsch': 100,
+  'mobility': 25,
+  'lauf': 40,
+  'gehen': 45
+};
 
 const kindLabels = {
   'kraft': 'Kraft',
@@ -83,6 +136,8 @@ const kindLabels = {
   'intervall': 'Intervalle',
   'marsch': 'Marsch',
   'mobility': 'Mobility',
+  'lauf': 'Laufen',
+  'gehen': 'Gehen',
 };
 
 class PlannedSession {
@@ -197,8 +252,14 @@ List<List<String>> _freeWindows(DateTime day, Map<String, dynamic> slots, List<B
   return (window[0], f(stop));
 }
 
-List<Map<String, dynamic>> strengthExercises(String split, double volume, int rpeAdj) {
-  final base = exerciseCatalog[split] ?? exerciseCatalog['Kettlebell Ganzkörper']!;
+List<Map<String, dynamic>> strengthExercises(String split, double volume, int rpeAdj, {bool knee = false}) {
+  var base = exerciseCatalog[split] ?? exerciseCatalog['Kettlebell Ganzkörper']!;
+  if (knee && split == 'Hyrox Simulation') {
+    base = [('Rudern statt Laufen', 4, '1000 m'), base[1]];
+  }
+  if (knee) {
+    base = [for (final e in base) e.$1.contains('Lunges') ? ('Sandbag Front Carry', e.$2, '40 m') : e];
+  }
   final out = <Map<String, dynamic>>[];
   for (var i = 0; i < base.length; i++) {
     final (name, sets, reps) = base[i];
@@ -216,12 +277,15 @@ WeekPlan buildWeek(
   List<BusyBlock> busy = const [],
   (int, int)? zone2Hr,
 }) {
-  final goals = (settings['goals'] as Map?) ?? {};
+  final goals = disciplinesFrom(settings);
+  final knee = settings['knee_friendly'] == true;
   final slots = Map<String, dynamic>.from((settings['slots'] as Map?) ?? {});
   final (phase, volume, rpeAdj) = determinePhase(weekStart, avgReadiness);
+  final easy = phase == 'Deload' || phase == 'Entlastung';
   final days = [for (var i = 0; i < 7; i++) addDays(weekStart, i)];
   final free = {for (final d in days) iso(d): _freeWindows(d, slots, busy)};
   final used = {for (final d in days) iso(d): 0};
+  final kindOn = {for (final d in days) iso(d): <String>[]};
   final sessions = <PlannedSession>[];
   final unplaced = <String>[];
 
@@ -235,125 +299,144 @@ WeekPlan buildWeek(
   }
 
   final z2 = zone2Hr != null ? 'Zone 2 (${zone2Hr.$1}–${zone2Hr.$2} bpm)' : 'Zone 2 (locker, Sprechen möglich)';
-  int g(String k) => (goals[k] as num?)?.toInt() ?? 0;
+  String text(String s, int minutes) =>
+      s.replaceAll('{min}', '$minutes').replaceAll('{z2}', z2).replaceAll('{load}', easy ? '6–8 kg' : '8–12 kg');
 
-  // 1. Langer Marsch / Rucking (Sonntag, sonst Samstag)
+  void add(DateTime d, (String, String) t, Discipline disc, String kind, String title, String focus, int rpe,
+      [List<Map<String, dynamic>>? exercises]) {
+    sessions.add(PlannedSession(
+        date: iso(d), start: t.$1, end: t.$2, kind: kind, title: title, focus: focus, rpe: rpe, exercises: exercises));
+    kindOn[iso(d)]!.add(disc.type);
+  }
+
+  // 1. Lange Einheiten (Marsch) aufs Wochenende, Sonntag zuerst
   final longDays = <String>[];
-  for (var n = 0; n < g('march'); n++) {
-    var placed = false;
-    for (final d in [days[6], days[5]]) {
-      if (longDays.contains(iso(d))) continue;
-      final t = take(d, durationMin['marsch']!, 'am');
-      if (t != null) {
+  for (final g in goals.where((g) => g.discipline.type == 'lang')) {
+    for (var n = 0; n < g.perWeek; n++) {
+      var placed = false;
+      for (final d in [days[6], days[5]]) {
+        if (longDays.contains(iso(d))) continue;
+        final t = take(d, g.discipline.minutes, 'am');
+        if (t == null) continue;
         longDays.add(iso(d));
         final minutes = (80 * volume).round();
-        final load = (phase == 'Deload' || phase == 'Entlastung') ? '8–10 kg' : '10–15 kg';
-        sessions.add(PlannedSession(
-          date: iso(d),
-          start: t.$1,
-          end: t.$2,
-          kind: 'marsch',
-          title: 'Langer Marsch (Rucking)',
-          focus: '$minutes min zügig gehen mit Rucksack $load, $z2. Hügel erlaubt, '
-              'bergab kurze Schritte (knieschonend).',
-          rpe: 5 + rpeAdj,
-        ));
+        final load = easy ? '8–10 kg' : '10–15 kg';
+        add(
+            d,
+            t,
+            g.discipline,
+            'marsch',
+            'Langer Marsch (Rucking)',
+            '$minutes min zügig gehen, gern mit Rucksack $load, $z2. Hügel erlaubt, '
+                'bergab kurze Schritte (knieschonend).',
+            5 + rpeAdj);
         placed = true;
         break;
       }
+      if (!placed) unplaced.add(g.discipline.short);
     }
-    if (!placed) unplaced.add('Langer Marsch');
   }
 
-  // 2. Krafteinheiten (abends)
-  final nStrength = g('strength');
-  final split = strengthSplits[nStrength.clamp(1, 5)]!;
-  var placed = 0;
-  for (final d in days) {
-    if (placed >= nStrength) break;
-    if (longDays.contains(iso(d))) continue;
-    final t = take(d, durationMin['kraft']!, 'pm');
-    if (t == null) continue;
-    final name = split[placed % split.length];
-    sessions.add(PlannedSession(
-      date: iso(d),
-      start: t.$1,
-      end: t.$2,
-      kind: 'kraft',
-      title: name,
-      focus: 'Schwere Grundübungen zuerst, danach leichter werden.',
-      rpe: 7 + rpeAdj,
-      exercises: strengthExercises(name, volume, rpeAdj),
-    ));
-    placed++;
-  }
-  for (var i = placed; i < nStrength; i++) {
-    unplaced.add('Kraft');
-  }
-
-  // 3. Steigungsgehen auf dem Laufband, Intervalle nur in Aufbauwochen
-  final nCardio = g('cardio');
-  var cPlaced = 0;
-  for (final i in [1, 3, 5, 0, 2, 4, 6]) {
-    if (cPlaced >= nCardio) break;
-    final d = days[i];
-    if (longDays.contains(iso(d))) continue;
-    final nextIsLong = longDays.contains(iso(addDays(d, 1)));
-    final interval = phase == 'Aufbau' && cPlaced == 1 && !nextIsLong;
-    final kind = interval ? 'intervall' : 'cardio';
-    final t = take(d, durationMin[kind]!, 'am');
-    if (t == null) continue;
-    if (interval) {
-      sessions.add(PlannedSession(
-        date: iso(d),
-        start: t.$1,
-        end: t.$2,
-        kind: 'intervall',
-        title: 'Steigungsintervalle Laufband',
-        focus: '8 min einlaufen (5 km/h, 3 %), dann 6 × 3 min zügig gehen bei 12–15 % Steigung '
-            'und 2 min locker bei 3 %, 5 min auslaufen. Nicht am Geländer festhalten.',
-        rpe: 7 + rpeAdj,
-      ));
-    } else {
-      sessions.add(PlannedSession(
-        date: iso(d),
-        start: t.$1,
-        end: t.$2,
-        kind: 'cardio',
-        title: 'Steigungsgehen Laufband',
-        focus: '${(40 * volume).round()} min bei 8–12 % Steigung, 5–6 km/h, $z2.',
-        rpe: 4,
-      ));
+  // 2. Kraft, Hyrox, HIIT abends, möglichst nicht zwei harte Tage am selben Tag
+  for (final g in goals.where((g) => g.discipline.type == 'kraft')) {
+    final disc = g.discipline;
+    final splits = disc.splits.first == 'functional' ? strengthSplits[g.perWeek.clamp(1, 5)]! : disc.splits;
+    var placed = 0;
+    for (final pass in [0, 1]) {
+      for (final d in days) {
+        if (placed >= g.perWeek) break;
+        if (longDays.contains(iso(d))) continue;
+        if (pass == 0 && kindOn[iso(d)]!.contains('kraft')) continue;
+        final t = take(d, disc.minutes, 'pm');
+        if (t == null) continue;
+        final name = splits[placed % splits.length];
+        final title = disc.key == 'hiit' ? 'HIIT-Zirkel (ohne Sprünge)' : name;
+        final focus = switch (disc.key) {
+          'hyrox' => knee
+              ? 'Hyrox-Stationen im Wechsel, Laufanteile auf Rudergerät oder SkiErg (Knie). Saubere Technik vor Tempo.'
+              : 'Hyrox-Stationen im Wechsel mit kurzen Läufen. Saubere Technik vor Tempo.',
+          'hiit' => '4 Runden, 40 s Arbeit / 20 s Pause, keine Sprünge.',
+          _ => 'Schwere Grundübungen zuerst, danach leichter werden.',
+        };
+        add(d, t, disc, disc.kind, title, focus, disc.rpe + rpeAdj,
+            strengthExercises(name, volume, rpeAdj, knee: knee));
+        placed++;
+      }
     }
-    cPlaced++;
-  }
-  for (var i = cPlaced; i < nCardio; i++) {
-    unplaced.add('Ausdauer');
+    for (var i = placed; i < g.perWeek; i++) {
+      unplaced.add(disc.short);
+    }
   }
 
-  // 4. Mobility am Tag nach dem Marsch, sonst am ersten freien Abend
+  // 3. Ausdauer morgens; beim Steigungstraining in Aufbauwochen die zweite Einheit als Intervalle
+  for (final g in goals.where((g) => g.discipline.type == 'ausdauer')) {
+    final disc = g.discipline;
+    var placed = 0;
+    for (final pass in [0, 1]) {
+      for (final i in [1, 3, 5, 0, 2, 4, 6]) {
+        if (placed >= g.perWeek) break;
+        final d = days[i];
+        if (longDays.contains(iso(d))) continue;
+        if (pass == 0 && kindOn[iso(d)]!.contains('ausdauer')) continue;
+        final nextIsLong = longDays.contains(iso(addDays(d, 1)));
+        final interval = disc.key == 'steigung' && phase == 'Aufbau' && placed == 1 && !nextIsLong;
+        final t = take(d, interval ? durationMin['intervall']! : disc.minutes, 'am');
+        if (t == null) continue;
+        if (interval) {
+          add(
+              d,
+              t,
+              disc,
+              'intervall',
+              'Steigungsintervalle Laufband',
+              '8 min einlaufen (5 km/h, 3 %), dann 6 × 3 min zügig gehen bei 12–15 % Steigung '
+                  'und 2 min locker bei 3 %, 5 min auslaufen. Nicht am Geländer festhalten.',
+              7 + rpeAdj);
+        } else {
+          var focus = text(disc.focus, (disc.minutes * 0.9 * volume).round());
+          var title = disc.title;
+          if (knee && disc.running) {
+            if (disc.key == 'laufband') {
+              focus = '${(disc.minutes * 0.9 * volume).round()} min zügig gehen, 3–6 % Steigung, $z2 (knieschonend).';
+            } else {
+              focus = '$focus Weicher Untergrund, kurze Schritte, bei Knieschmerz auf Gehen wechseln.';
+            }
+          }
+          if (disc.key == 'rucking') title = 'Rucking';
+          add(d, t, disc, disc.kind, title, focus, disc.rpe + (disc.rpe > 3 ? rpeAdj : 0));
+        }
+        placed++;
+      }
+    }
+    for (var i = placed; i < g.perWeek; i++) {
+      unplaced.add(disc.short);
+    }
+  }
+
+  // 4. Mobility: gewählte Einheiten, sonst eine am Tag nach dem Marsch bzw. am ersten freien Abend
+  final mobilityGoal = goals.where((g) => g.discipline.type == 'ruhig').fold(0, (s, g) => s + g.perWeek);
   final mobilityDays = [
     for (final l in longDays)
       if (free.containsKey(iso(addDays(parseIso(l), 1)))) addDays(parseIso(l), 1),
     ...days,
   ];
+  final mobDisc = disciplineByKey('yoga')!;
+  var mob = 0;
+  final mobTarget = mobilityGoal > 0 ? mobilityGoal : 1;
+  final mobDone = <String>{};
   for (final d in mobilityDays) {
+    if (mob >= mobTarget) break;
+    if (mobDone.contains(iso(d))) continue;
     final t = take(d, durationMin['mobility']!, 'pm');
-    if (t != null) {
-      sessions.add(PlannedSession(
-        date: iso(d),
-        start: t.$1,
-        end: t.$2,
-        kind: 'mobility',
-        title: 'Mobility',
-        focus: 'Ruhig, Fokus Hüfte und Brustwirbelsäule.',
-        rpe: 2,
-        exercises: [
-          for (final (n, s, r) in mobilityExercises) {'name': n, 'sets': s, 'reps': r, 'detail': '$s × $r'}
-        ],
-      ));
-      break;
-    }
+    if (t == null) continue;
+    add(d, t, mobDisc, 'mobility', 'Mobility', 'Ruhig, Fokus Hüfte und Brustwirbelsäule.', 2, [
+      for (final (n, s, r) in mobilityExercises) {'name': n, 'sets': s, 'reps': r, 'detail': '$s × $r'}
+    ]);
+    mobDone.add(iso(d));
+    mob++;
+  }
+  for (var i = mob; i < mobilityGoal; i++) {
+    unplaced.add(mobDisc.short);
   }
 
   sessions.sort((a, b) => '${a.date}${a.start}'.compareTo('${b.date}${b.start}'));

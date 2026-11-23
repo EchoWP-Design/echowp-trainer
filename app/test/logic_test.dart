@@ -1,4 +1,5 @@
 import 'package:echowp_trainer/logic/dates.dart';
+import 'package:echowp_trainer/logic/disciplines.dart';
 import 'package:echowp_trainer/logic/endurance.dart';
 import 'package:echowp_trainer/logic/nutrition.dart';
 import 'package:echowp_trainer/logic/planner.dart';
@@ -90,7 +91,14 @@ void main() {
   });
 
   group('Wochenplan', () {
-    final settings = Map<String, dynamic>.from(defaultSettings);
+    // Jans bisherige Einstellung: 4× Functional, 3× Steigung, 1× Marsch, knieschonend
+    final settings = Map<String, dynamic>.from(defaultSettings)
+      ..['disciplines'] = [
+        {'key': 'functional', 'per_week': 4},
+        {'key': 'steigung', 'per_week': 3},
+        {'key': 'marsch', 'per_week': 1},
+      ]
+      ..['knee_friendly'] = true;
 
     test('knieschonend: kein Laufen, Marsch am Wochenende, Ziele erfüllt', () {
       final ws = DateTime(2026, 11, 30); // KW 49, Aufbau
@@ -141,11 +149,7 @@ void main() {
         {'kind': 'gehen', 'duration_s': 4000},
         {'kind': 'gehen', 'duration_s': 1800},
         {'kind': 'kraft', 'duration_s': 3600},
-      ], {
-        'strength': 4,
-        'cardio': 3,
-        'march': 1
-      });
+      ], legacyDisciplines({'strength': 4, 'cardio': 3, 'march': 1}));
       expect(g[0].done, 1);
       expect(g[2].done, 1);
     });

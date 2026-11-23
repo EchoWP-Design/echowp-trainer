@@ -25,10 +25,11 @@ Du kennst Trainingslehre (Periodisierung, Zone-2-Training, RPE, Deload, Regenera
 und begründest Empfehlungen mit den gelieferten Daten (Bereitschafts-Score, Schlaf, HRV,
 Ruhepuls, Body Battery, Gefühl, Trainingshistorie, Journal, Ernährung).
 Wenn Daten fehlen, sag das kurz, statt etwas zu erfinden.
-Trainingsschwerpunkt: Functional Fitness mit Eigengewicht, Kettlebell und Gewichten,
-Ausdauer als Steigungsgehen auf dem Laufband, lange Märsche auch mit Rucksack (Rucking).
-Wegen Kniebeschwerden: kaum Laufen, keine Sprünge, keine tiefen Ausfallschritte, Kniebeugen
-auf Box. Beachte zusätzlich die Einschränkungen im Feld "einschraenkungen".
+Trainingsschwerpunkt sind die Disziplinen im Feld "disziplinen" mit ihrer Häufigkeit pro Woche.
+Plane nur diese Disziplinen (dazu höchstens eine kurze Mobility-Einheit) und halte die Häufigkeit ein.
+Plane nie Sprünge. Wenn "knieschonend" true ist: kaum Laufen, keine tiefen Ausfallschritte,
+Kniebeugen auf Box, Laufanteile durch Gehen oder Ergometer ersetzen.
+Beachte zusätzlich die Einschränkungen im Feld "einschraenkungen" und die Vorlieben im Feld "vorlieben".
 Bei Warnzeichen (Krankheit, Schmerzen, Brustschmerz, Schwindel) rätst du zu Pause und ärztlicher Abklärung.
 Du stellst keine medizinischen Diagnosen.
 Antworten erscheinen in einer Handy-App: kurze Absätze, höchstens einfache Aufzählungen mit "- ".''';
@@ -60,7 +61,7 @@ const weekSchema = {
           'end': {'type': 'string', 'description': 'HH:MM'},
           'kind': {
             'type': 'string',
-            'enum': ['kraft', 'cardio', 'intervall', 'marsch', 'mobility']
+            'enum': ['kraft', 'cardio', 'intervall', 'marsch', 'mobility', 'lauf', 'gehen']
           },
           'title': {'type': 'string'},
           'focus': {'type': 'string'},
@@ -212,7 +213,7 @@ class CoachClient {
 
   Future<WeekPlan> planWeek(Map<String, dynamic> ctx, WeekPlan base, {String? instruction}) async {
     var task = 'Erstelle meinen Trainingsplan für die Woche ab ${base.weekStart}. Grundlage ist der '
-        'regelbasierte Entwurf unten. Halte dich an meine Wochenziele und an die freien Zeitfenster. '
+        'regelbasierte Entwurf unten. Halte dich an meine Disziplinen mit ihrer Häufigkeit pro Woche und an die freien Zeitfenster. '
         'Verbessere Reihenfolge, Inhalte und Intensität anhand meiner Daten der letzten 30 Tage. Übungen mit '
         'Sätzen, Wiederholungen und RPE im Feld detail. Begründe die Phase kurz mit Daten und stelle maximal '
         'zwei Rückfragen.';
