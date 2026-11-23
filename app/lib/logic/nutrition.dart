@@ -22,6 +22,7 @@ class NutritionTargets {
   final int? bmr;
   final double? pal;
   final String? goal;
+  final int? restKcal, activeKcal; // gesetzt, wenn das Ziel aus dem Uhr-Verbrauch stammt
   final List<String> hints;
 
   NutritionTargets({
@@ -40,8 +41,12 @@ class NutritionTargets {
     this.bmr,
     this.pal,
     this.goal,
+    this.restKcal,
+    this.activeKcal,
     List<String>? hints,
   }) : hints = hints ?? [];
+
+  bool get fromBurn => restKcal != null;
 
   Map<String, dynamic> toJson() => {
         'mode': mode,
@@ -56,6 +61,8 @@ class NutritionTargets {
         'bmr': bmr,
         'pal': pal,
         'goal': goal,
+        if (restKcal != null) 'ruhe_kcal': restKcal,
+        if (activeKcal != null) 'aktiv_kcal': activeKcal,
         'hints': hints,
       };
 }
@@ -64,7 +71,7 @@ double _r1(double v) => (v * 10).round() / 10;
 
 NutritionTargets _finish(
     String mode, double weight, double kcal, double protein, double fat, double fiber, double water,
-    {int? bmr, double? pal, String? goal}) {
+    {int? bmr, double? pal, String? goal, int? restKcal, int? activeKcal}) {
   final kcalForCarbs = kcal - protein * 4 - fat * 9; // Excel C10/D10
   final carbs = kcalForCarbs / 4 > 0 ? kcalForCarbs / 4 : 0.0;
   return NutritionTargets(
@@ -83,6 +90,8 @@ NutritionTargets _finish(
     bmr: bmr,
     pal: pal,
     goal: goal,
+    restKcal: restKcal,
+    activeKcal: activeKcal,
   );
 }
 
@@ -161,4 +170,25 @@ NutritionTargets calculateNutrition(double weightKg, Map<String, dynamic> profil
     enduranceHWeek: training['endurance_hours_week'] ?? 0,
     trainingHToday: training['hours_today'] ?? 0,
   );
+}
+
+/// Kalorienziel aus dem gemessenen Verbrauch der Uhr: Ruhekalorien + Aktivkalorien,
+/// dazu der Zu-/Abschlag des Ziels. Protein und Wasser bleiben wie im gewählten Modus,
+/// Fett und Ballaststoffe folgen dessen Regeln (Jan: kcal/30 und kcal·0,014).
+NutritionTargets withBurn(NutritionTargets base,
+    {required double restKcal, required double activeKcal, String goal = 'halten'}) {
+  final kcal = (restKcal + activeKcal) * (1 + (nutritionGoals[goal] ?? 0));
+  final w = base.weightKg;
+  final double fat, fiber;
+  if (base.mode == 'jan') {
+    fat = kcal / 30;
+    fiber = kcal * 0.014;
+  } else {
+    fat = [kcal * 0.30 / 9, w * 0.8].reduce((a, b) => a > b ? a : b);
+    fiber = [kcal / 1000 * 14, 30.0].reduce((a, b) => a > b ? a : b);
+  }
+  final t = _finish(base.mode, w, kcal, base.proteinG.toDouble(), fat, fiber, base.waterL,
+      bmr: base.bmr, pal: base.pal, goal: goal, restKcal: restKcal.round(), activeKcal: activeKcal.round());
+  t.hints.addAll(base.hints.where((h) => !h.startsWith('Größe, Geburtsjahr')));
+  return t;
 }

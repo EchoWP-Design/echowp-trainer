@@ -7,7 +7,7 @@ Video [„Garmin + Claude = mein eigener Performance-Coach“](https://www.youtu
 Garmin sammelt die Daten, die App macht daraus einen Tagesplan, eine Trainingswoche und
 einen Coach, mit dem man reden kann.
 
-**Aktuelle Version: 1.1.1** (Android-App) – Download unter [Releases](https://github.com/EchoWP-Design/echowp-trainer/releases/latest)
+**Aktuelle Version: 1.2.0** (Android-App) – Download unter [Releases](https://github.com/EchoWP-Design/echowp-trainer/releases/latest)
 
 ![Dashboard](docs/img/heute.png)
 
@@ -30,7 +30,12 @@ einen Coach, mit dem man reden kann.
 - **Essen mit Kalorienzählen** (ab App 1.1): Barcode-Scanner für ganze Packungen, Portionen
   oder Gramm (Open Food Facts), KI-Schätzung aus Freitext, **Food Memory** für häufige
   Lebensmittel mit einem Tipp, Tagesbilanz von Kalorien und Makros gegen deine Ziele.
-- **Ernährungsziele** nach Mifflin-St Jeor oder nach Jans Excel-Formel, siehe
+- **Mehrere Uhren** (ab App 1.2): neben Garmin auch Amazfit (Zepp-App), Suunto und andere
+  Uhren über Android Health Connect. Schritte, Kalorien, Schlaf, Ruhepuls, HRV und Trainings
+  laufen zusammen, doppelte Trainings werden erkannt.
+- **Startseite** mit Schritten und Kalorien des Tages: Ruhekalorien + Aktivkalorien = Gesamt.
+- **Ernährungsziele** aus dem Verbrauch der Uhr (Ruhe- plus Aktivkalorien, abschaltbar) oder nach
+  Mifflin-St Jeor bzw. Jans Excel-Formel, siehe
   [docs/ERNAEHRUNG.md](docs/ERNAEHRUNG.md).
 - **Morgenroutine, Wochenziele und Streaks** als kleine Gamification.
 - Läuft als **Android-App** direkt auf dem Handy (ohne Server) oder als **Web-App (PWA)**
@@ -46,6 +51,22 @@ Drei Wege, Details in [docs/GARMIN.md](docs/GARMIN.md):
    erstellen, als `GARMIN_PERSONAL_API_KEY` eintragen, fertig.
 2. Inoffizieller Garmin-Connect-Zugang über `garminconnect` als Reserve.
 3. Import von FIT-Dateien und Garmin-Datenexport ohne Online-Zugang.
+
+### Amazfit, Suunto und andere Uhren (Android-App)
+
+Zepp (Amazfit) und Suunto bieten keine offene Schnittstelle für Privatnutzer an (Suunto nur
+für zugelassene Firmenpartner). Beide Apps schreiben ihre Daten aber nach **Health Connect**,
+dem Gesundheitsspeicher von Android. Die App liest dort mit Erlaubnis mit:
+
+1. In der Zepp- bzw. Suunto-App die Verbindung zu Health Connect einschalten.
+2. In EchoWP Trainer unter Daten → „Weitere Uhren“ auf **Health Connect verbinden** tippen und
+   die Leserechte erlauben.
+
+Gelesen werden Schritte, Aktiv-, Gesamt- und Ruhekalorien, Schlaf, Ruhepuls, HRV und Trainings.
+Garmin-Werte haben Vorrang, Health Connect füllt Lücken. Bei Schritten und Kalorien zählt der
+höchste Wert einer App (keine doppelte Zählung, wenn zwei Apps denselben Tag schreiben).
+Trainings, die Garmin schon geliefert hat (Start höchstens 10 Minuten auseinander), werden nicht
+doppelt gezählt. Braucht Android 8 oder neuer, unter Android 14 die Health-Connect-App.
 
 ## KI-Coach
 
@@ -64,7 +85,8 @@ Claude. Daten bleiben auf dem Handy, die Schlüssel liegen im sicheren Speicher 
    `EchoWP-Trainer.apk` auf dem Handy herunterladen und öffnen. Android fragt einmal, ob der
    Browser Apps installieren darf: erlauben.
 2. App öffnen → Reiter **Daten** → Garmin Personal API Key einfügen → Speichern.
-   Die App lädt sofort die letzten 14 Tage.
+   Die App lädt sofort die letzten 14 Tage. Für Amazfit, Suunto & Co. zusätzlich
+   **Health Connect verbinden** (siehe oben).
 3. Im selben Reiter den Anthropic-API-Key für den KI-Coach einfügen.
 4. Profil (Größe, Geburtsjahr, Geschlecht, Gewicht) eintragen, dann unter **Woche** planen.
 
@@ -76,6 +98,11 @@ Unbekannte Barcodes tippst du einmal ab, danach kennt die App das Produkt.
 **Updates (ab 1.1.1):** Die App prüft einmal am Tag auf GitHub, ob es eine neue Version gibt,
 und zeigt dann oben einen Hinweis. „Laden“ öffnet die APK im Browser, danach über die
 vorhandene App installieren. Manuell: Reiter Daten → Updates.
+
+**Kalorien (ab 1.2):** Die Startseite zeigt Ruhekalorien + Aktivkalorien = Gesamtverbrauch.
+Das Tagesziel ist dann Ruhe + Aktiv mit dem Zu- oder Abschlag des Ziels (Abnehmen −15 %,
+Aufbauen +10 %). Für heute gelten als Ruhekalorien der Schnitt der letzten 7 Tage, die
+Aktivkalorien wachsen über den Tag mit. Schalter unter Daten → Profil.
 
 Beim Öffnen synchronisiert die App automatisch, wenn der letzte Abruf älter als eine Stunde ist.
 
@@ -151,6 +178,7 @@ abklären lassen. Nutzung auf eigene Verantwortung.
 **Datenschutz.** Die Android-App speichert alle Daten (Garmin-Werte, Journal, Essen, Pläne)
 nur auf dem Handy, die Schlüssel im sicheren Speicher von Android. Daten gehen nur an:
 - **Garmin** (Abruf deiner eigenen Daten über die Personal API),
+- **Health Connect** auf dem Handy (nur lesen, nur wenn verbunden; bleibt auf dem Gerät),
 - **Anthropic** (nur wenn ein Anthropic-Key eingetragen ist: Briefing, Wochenplan, Chat und
   KI-Schätzung beim Essen; dabei werden die dafür nötigen Trainings-, Gesundheits- und
   Essensdaten übertragen),
@@ -168,5 +196,5 @@ Datenschutzerklärung, weil Gesundheitsdaten besonders geschützt sind (Art. 9 D
 - Quellcode dieses Repos: [MIT-Lizenz](LICENSE).
 
 **Marken.** Garmin, Garmin Connect und Body Battery sind Marken von Garmin Ltd., Claude ist eine
-Marke von Anthropic. EchoWP Trainer ist ein unabhängiges Projekt und mit keinem dieser
+Marke von Anthropic. Amazfit, Zepp und Suunto sind Marken ihrer Inhaber. EchoWP Trainer ist ein unabhängiges Projekt und mit keinem dieser
 Unternehmen verbunden.

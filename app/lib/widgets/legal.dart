@@ -11,7 +11,7 @@ const healthNotice = 'EchoWP Trainer ist kein Medizinprodukt und ersetzt keine �
     'und ärztlich abklären lassen. Nutzung auf eigene Verantwortung.';
 
 const privacyNotice = 'Alle Daten bleiben auf diesem Handy, Schlüssel im sicheren Speicher von Android. '
-    'Daten gehen nur an Garmin (Abruf deiner Daten), an Anthropic (nur mit eingetragenem Key: Briefing, Wochenplan, '
+    'Health Connect wird nur gelesen. Daten gehen nur an Garmin (Abruf deiner Daten), an Anthropic (nur mit eingetragenem Key: Briefing, Wochenplan, '
     'Chat und KI-Schätzung beim Essen, dabei die nötigen Trainings-, Gesundheits- und Essensdaten) und an '
     'Open Food Facts (nur der gescannte Barcode). Keine eigenen Server, keine Werbung, kein Tracking.';
 
@@ -19,7 +19,7 @@ const offAttribution =
     'Produktdaten: Open Food Facts (openfoodfacts.org), Datenbank unter ODbL, Inhalte unter CC BY-SA 4.0.';
 
 const trademarkNotice = 'Garmin, Garmin Connect und Body Battery sind Marken von Garmin Ltd., Claude ist eine Marke '
-    'von Anthropic. EchoWP Trainer ist ein unabhängiges Projekt und mit keinem dieser Unternehmen verbunden.';
+    'von Anthropic. Amazfit, Zepp und Suunto sind Marken ihrer Inhaber. EchoWP Trainer ist ein unabhängiges Projekt und mit keinem dieser Unternehmen verbunden.';
 
 /// Hinweis beim ersten Start, muss einmal bestätigt werden.
 Future<void> showFirstStartNotice(BuildContext context) => showDialog<void>(

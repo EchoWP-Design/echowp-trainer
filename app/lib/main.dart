@@ -11,6 +11,7 @@ import 'screens/food_screen.dart';
 import 'screens/journal_screen.dart';
 import 'screens/today_screen.dart';
 import 'screens/week_screen.dart';
+import 'services/health_connect.dart';
 import 'services/storage.dart';
 import 'theme.dart';
 import 'widgets/legal.dart';
@@ -18,7 +19,7 @@ import 'widgets/legal.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('de_DE');
-  final state = AppState(await Store.open(), DeviceSecrets());
+  final state = AppState(await Store.open(), DeviceSecrets(), health: HealthConnectSource());
   await state.init();
   runApp(TrainerApp(state: state));
 }
@@ -86,7 +87,7 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   /// Beim Öffnen synchronisieren, wenn der letzte Abruf über eine Stunde her ist.
   void _autoSync() {
     final st = context.read<AppState>();
-    if (st.garminConfigured && st.syncDue && !st.busy) st.sync();
+    if (st.anySource && st.syncDue && !st.busy) st.sync();
   }
 
   @override

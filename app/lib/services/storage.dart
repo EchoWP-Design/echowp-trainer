@@ -87,6 +87,7 @@ class Store {
   static Map<String, dynamic> _withDefaults(Map<String, dynamic> d) {
     for (final k in [
       'metrics',
+      'hc_metrics',
       'activities',
       'journal',
       'plans',

@@ -11,6 +11,10 @@ KEYSTORE = root / "keystore" / "echowp-release.jks"
 PW = os.environ.get("ANDROID_KEYSTORE_PASSWORD", "")
 _alias_file = root / "keystore" / "alias.txt"
 ALIAS = _alias_file.read_text().strip() if _alias_file.exists() else "echowp"
+HEALTH_READ = [
+    "STEPS", "ACTIVE_CALORIES_BURNED", "TOTAL_CALORIES_BURNED", "BASAL_METABOLIC_RATE",
+    "RESTING_HEART_RATE", "HEART_RATE_VARIABILITY", "SLEEP", "EXERCISE", "DISTANCE",
+]
 
 
 def patch(path: pathlib.Path, fn):
@@ -32,11 +36,50 @@ def manifest(t: str) -> str:
         t = t.replace("<application", '<uses-permission android:name="android.permission.CAMERA"/>\n    <application', 1)
     if "android.permission.INTERNET" not in t:
         t = t.replace("<application", '<uses-permission android:name="android.permission.INTERNET"/>\n    <application', 1)
+    # Health Connect (Amazfit/Zepp, Suunto und andere Uhren): nur Leserechte
+    if "android.permission.health." not in t:
+        perms = "".join(f'<uses-permission android:name="android.permission.health.READ_{p}"/>\n    ' for p in HEALTH_READ)
+        queries = (
+            "<queries>\n"
+            '        <package android:name="com.google.android.apps.healthdata"/>\n'
+            '        <intent><action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/></intent>\n'
+            "    </queries>\n    "
+        )
+        t = t.replace("<application", perms + queries + "<application", 1)
+    if "ACTION_SHOW_PERMISSIONS_RATIONALE\"/>\n            </intent-filter>" not in t:
+        rationale = (
+            "<intent-filter>\n"
+            '                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>\n'
+            "            </intent-filter>\n"
+            "        </activity>"
+        )
+        t = t.replace("</activity>", rationale, 1)
+    if "ViewPermissionUsageActivity" not in t:
+        alias = (
+            "</activity>\n"
+            "        <activity-alias\n"
+            '            android:name="ViewPermissionUsageActivity"\n'
+            '            android:exported="true"\n'
+            '            android:targetActivity=".MainActivity"\n'
+            '            android:permission="android.permission.START_VIEW_PERMISSION_USAGE">\n'
+            "            <intent-filter>\n"
+            '                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE"/>\n'
+            '                <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>\n'
+            "            </intent-filter>\n"
+            "        </activity-alias>"
+        )
+        t = t.replace("</activity>", alias, 1)
     return t
 
 
+def main_activity(t: str) -> str:
+    # Health Connect fragt Berechtigungen über registerForActivityResult ab
+    t = t.replace("io.flutter.embedding.android.FlutterActivity", "io.flutter.embedding.android.FlutterFragmentActivity")
+    return re.sub(r"\bFlutterActivity\(\)", "FlutterFragmentActivity()", t)
+
+
 def gradle_kts(t: str) -> str:
-    t = re.sub(r"minSdk\s*=\s*[^\n]+", "minSdk = 24", t)
+    t = re.sub(r"minSdk\s*=\s*[^\n]+", "minSdk = 26", t)
     if KEYSTORE.exists() and PW:
         if 'create("release")' not in t:
             signing = (
@@ -60,4 +103,8 @@ def gradle_kts(t: str) -> str:
 
 patch(root / "android/app/src/main/AndroidManifest.xml", manifest)
 patch(root / "android/app/build.gradle.kts", gradle_kts)
+_acts = list((root / "android/app/src/main/kotlin").rglob("MainActivity.kt"))
+if not _acts:
+    raise SystemExit("fehlt: MainActivity.kt")
+patch(_acts[0], main_activity)
 print("Plattform-Anpassungen abgeschlossen.")

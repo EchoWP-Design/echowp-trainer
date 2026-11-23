@@ -36,17 +36,18 @@ class TodayScreen extends StatelessWidget {
         children: [
           EchoHeader(title: DateFormat('EEEE, d. MMMM', 'de_DE').format(d), actions: [
             IconButton(
-              tooltip: 'Garmin synchronisieren',
+              tooltip: 'Uhrdaten synchronisieren',
               icon: const Icon(Icons.sync, color: echoYellow),
               onPressed: st.busy ? null : () => st.sync(),
             ),
           ]),
-          if (!st.garminConfigured)
+          if (!st.anySource)
             const Card(
               child: Padding(
                 padding: EdgeInsets.all(16),
-                child: Text('Willkommen! Trag unter „Daten“ deinen Garmin Personal API Key ein, '
-                    'dann holt die App Schlaf, HRV, Ruhepuls, Body Battery und Aktivitäten.'),
+                child: Text('Willkommen! Trag unter „Daten“ deinen Garmin Personal API Key ein oder verbinde '
+                    'Health Connect (Amazfit, Suunto …), dann holt die App Schlaf, HRV, Ruhepuls, Schritte, '
+                    'Kalorien und Aktivitäten.'),
               ),
             ),
           Card(
@@ -78,18 +79,29 @@ class TodayScreen extends StatelessWidget {
             ),
           ),
           SectionCard(
-            title: 'Garmin heute',
+            title: 'Heute gemessen',
             trailing: sync == null
                 ? null
                 : Text('Sync ${DateFormat('HH:mm', 'de_DE').format(DateTime.parse(sync['ts'] as String))}',
                     style: TextStyle(color: sync['ok'] == true ? echoMuted : const Color(0xFFFF5A5F), fontSize: 11)),
-            child: TileGrid(children: [
-              StatTile('Schlaf', fmtNum(m['sleep_hours'] as num?, digits: 1), unit: 'h'),
-              StatTile('Schlafscore', fmtNum(m['sleep_score'] as num?)),
-              StatTile('HRV', fmtNum(m['hrv_ms'] as num?), unit: 'ms'),
-              StatTile('Ruhepuls', fmtNum(m['resting_hr'] as num?), unit: 'bpm'),
-              StatTile('Body Battery', fmtNum(m['body_battery'] as num?)),
-              StatTile('Stress', fmtNum(m['stress_avg'] as num?)),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              TileGrid(children: [
+                StatTile('Schlaf', fmtNum(m['sleep_hours'] as num?, digits: 1), unit: 'h'),
+                StatTile('Schlafscore', fmtNum(m['sleep_score'] as num?)),
+                StatTile('HRV', fmtNum(m['hrv_ms'] as num?), unit: 'ms'),
+                StatTile('Ruhepuls', fmtNum(m['resting_hr'] as num?), unit: 'bpm'),
+                StatTile('Body Battery', fmtNum(m['body_battery'] as num?)),
+                StatTile('Stress', fmtNum(m['stress_avg'] as num?)),
+                StatTile('Schritte', fmtSteps(m['steps'] as num?)),
+                StatTile('Ruhe', fmtNum(m['rest_kcal'] as num?), unit: 'kcal'),
+                StatTile('Aktiv', fmtNum(m['active_kcal'] as num?), unit: 'kcal'),
+                StatTile('Gesamt', fmtNum(m['total_kcal'] as num?), unit: 'kcal'),
+              ]),
+              if (sourceNote(m) case final note?)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(note, style: const TextStyle(color: echoMuted, fontSize: 11)),
+                ),
             ]),
           ),
           SectionCard(
@@ -181,7 +193,12 @@ class TodayScreen extends StatelessWidget {
             title: 'Ernährung heute',
             trailing: nut == null
                 ? null
-                : Text(nut.mode == 'jan' ? 'Jans Formel' : 'Wissenschaft',
+                : Text(
+                    nut.fromBurn
+                        ? 'Uhr-Verbrauch'
+                        : nut.mode == 'jan'
+                            ? 'Jans Formel'
+                            : 'Wissenschaft',
                     style: const TextStyle(color: echoMuted, fontSize: 11)),
             child: nut == null
                 ? const Text('Gewicht im Journal oder unter „Daten“ eintragen.', style: TextStyle(color: echoMuted))
@@ -191,6 +208,16 @@ class TodayScreen extends StatelessWidget {
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 10),
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                          if (nut.fromBurn)
+                            Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Text(
+                                'Verbrauch: Ruhe ${nut.restKcal} + Aktiv ${nut.activeKcal} = '
+                                '${nut.restKcal! + nut.activeKcal!} kcal'
+                                '${nut.goal != null && nut.goal != 'halten' ? ' · Ziel ${nut.goal}' : ''}',
+                                style: const TextStyle(color: echoMuted, fontSize: 12),
+                              ),
+                            ),
                           Text(
                             'Gegessen ${eaten.kcal.round()} von ${nut.kcal} kcal · '
                             'Protein ${eaten.protein.round()} von ${nut.proteinG} g',
@@ -236,4 +263,25 @@ class TodayScreen extends StatelessWidget {
     final idx = plan.sessions.indexWhere((x) => x.date == s.date && x.start == s.start && x.title == s.title);
     if (idx >= 0) st.setSessionStatus(ws, idx, status);
   }
+}
+
+/// Schritte mit Tausenderpunkt (12.345).
+String fmtSteps(num? v) {
+  if (v == null) return '–';
+  return NumberFormat.decimalPattern('de_DE').format(v.round());
+}
+
+/// Hinweis, welche Werte von einer anderen Uhr stammen.
+String? sourceNote(Map<String, dynamic> m) {
+  const names = {
+    'steps_src': 'Schritte',
+    'active_kcal_src': 'Aktivkalorien',
+    'total_kcal_src': 'Gesamtkalorien',
+    'sleep_hours_src': 'Schlaf',
+  };
+  final parts = [
+    for (final e in names.entries)
+      if (m[e.key] is String && m[e.key] != 'Garmin') '${e.value}: ${m[e.key]}'
+  ];
+  return parts.isEmpty ? null : 'Von anderer Uhr: ${parts.join(', ')}';
 }

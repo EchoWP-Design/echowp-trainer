@@ -14,6 +14,7 @@ import 'logic/streaks.dart';
 import 'services/coach.dart';
 import 'services/food_lookup.dart';
 import 'services/garmin.dart';
+import 'services/health_connect.dart';
 import 'services/storage.dart';
 import 'services/updater.dart';
 
@@ -23,6 +24,7 @@ class AppState extends ChangeNotifier {
   final Store store;
   final SecretStore secrets;
   final http.Client? httpClient;
+  final HealthReader? health;
   DateTime Function() clock;
 
   String? garminKey;
@@ -31,7 +33,8 @@ class AppState extends ChangeNotifier {
   String? busyLabel;
   String? lastError;
 
-  AppState(this.store, this.secrets, {this.httpClient, DateTime Function()? clock}) : clock = clock ?? DateTime.now;
+  AppState(this.store, this.secrets, {this.httpClient, this.health, DateTime Function()? clock})
+      : clock = clock ?? DateTime.now;
 
   DateTime get today => dayOnly(clock());
 
@@ -42,6 +45,8 @@ class AppState extends ChangeNotifier {
   }
 
   bool get garminConfigured => (garminKey ?? '').isNotEmpty;
+  bool get healthConnectOn => health != null && store.setting('health_connect') == true;
+  bool get anySource => garminConfigured || healthConnectOn;
   bool get coachEnabled => (anthropicKey ?? '').isNotEmpty;
   String get coachModel => (store.setting('coach_model') as String?) ?? defaultCoachModel;
 
@@ -119,7 +124,10 @@ class AppState extends ChangeNotifier {
   }
 
   // ---------------------------------------------------------------- Daten
-  Map<String, dynamic>? metricsFor(String d) => (store.section('metrics')[d] as Map?)?.cast<String, dynamic>();
+  /// Tageswerte: Garmin zuerst, andere Uhren (Health Connect) füllen Lücken.
+  Map<String, dynamic>? metricsFor(String d) => mergeMetrics(
+      (store.section('metrics')[d] as Map?)?.cast<String, dynamic>(),
+      healthConnectOn ? (store.section('hc_metrics')[d] as Map?)?.cast<String, dynamic>() : null);
   Map<String, dynamic>? journalFor(String d) => (store.section('journal')[d] as Map?)?.cast<String, dynamic>();
 
   Map<String, Map<String, dynamic>> _range(String section, DateTime start, DateTime end) {
@@ -133,11 +141,22 @@ class AppState extends ChangeNotifier {
 
   List<Map<String, dynamic>> activities(DateTime start, DateTime end) {
     final s = iso(start), e = iso(end);
-    final list = [
+    final all = [
       for (final a in store.section('activities').values)
         if ((a['date'] as String).compareTo(s) >= 0 && (a['date'] as String).compareTo(e) <= 0)
           (a as Map).cast<String, dynamic>()
     ];
+    // Einheiten aus Health Connect nur, wenn sie nicht schon von Garmin (oder einer
+    // anderen App) für dieselbe Zeit vorliegen
+    final list = [
+      for (final a in all)
+        if (a['source'] != 'health-connect') a
+    ];
+    if (healthConnectOn) {
+      for (final a in all) {
+        if (a['source'] == 'health-connect' && !list.any((b) => sameWorkout(a, b))) list.add(a);
+      }
+    }
     list.sort((a, b) => '${b['date']}${b['start_time'] ?? ''}'.compareTo('${a['date']}${a['start_time'] ?? ''}'));
     return list;
   }
@@ -152,42 +171,93 @@ class AppState extends ChangeNotifier {
   }
 
   Future<String?> sync({int days = 3, int activityDays = 14}) async {
-    if (!garminConfigured) {
-      lastError = 'Erst den Garmin Personal API Key unter „Daten“ eintragen.';
+    if (!anySource) {
+      lastError = 'Erst unter „Daten“ den Garmin Personal API Key eintragen oder Health Connect verbinden.';
       notifyListeners();
       return null;
     }
-    return _run('Garmin wird synchronisiert …', () async {
-      final g = _garmin();
-      var nDays = 0;
-      try {
-        for (var i = days - 1; i >= 0; i--) {
-          final m = await g.fetchDaily(addDays(today, -i));
-          if (hasMetricData(m)) {
-            store.section('metrics')[m['date'] as String] = m;
-            nDays++;
-          }
+    return _run('Daten werden synchronisiert …', () async {
+      final parts = <String>[];
+      final errors = <String>[];
+      if (garminConfigured) {
+        try {
+          parts.add(await _syncGarmin(days, activityDays));
+        } catch (e) {
+          errors.add('Garmin: $e');
         }
-        final acts = await g.fetchActivities(addDays(today, -(activityDays - 1)), today);
-        final stored = store.section('activities');
-        for (final a in acts) {
-          final old = (stored[a['id']] as Map?) ?? {};
-          stored[a['id'] as String] = {
-            ...a,
-            if (old['rpe'] != null) 'rpe': old['rpe'],
-            if (old['feedback'] != null) 'feedback': old['feedback']
-          };
-        }
-        final msg = '$nDays Tage und ${acts.length} Aktivitäten aktualisiert';
-        store.data['last_sync'] = {'ts': clock().toIso8601String(), 'ok': true, 'message': msg};
-        store.save();
-        return msg;
-      } catch (e) {
-        store.data['last_sync'] = {'ts': clock().toIso8601String(), 'ok': false, 'message': e.toString()};
-        store.save();
-        rethrow;
       }
+      if (healthConnectOn) {
+        try {
+          parts.add(await _syncHealthConnect(activityDays));
+        } catch (e) {
+          errors.add('Health Connect: $e');
+        }
+      }
+      final msg = [...parts, ...errors].join(' · ');
+      store.data['last_sync'] = {'ts': clock().toIso8601String(), 'ok': errors.isEmpty, 'message': msg};
+      store.save();
+      if (parts.isEmpty) throw Exception(errors.join(' · '));
+      return msg;
     });
+  }
+
+  void _storeActivity(Map<String, dynamic> a) {
+    final stored = store.section('activities');
+    final old = (stored[a['id']] as Map?) ?? {};
+    stored[a['id'] as String] = {
+      ...a,
+      if (old['rpe'] != null) 'rpe': old['rpe'],
+      if (old['feedback'] != null) 'feedback': old['feedback']
+    };
+  }
+
+  Future<String> _syncGarmin(int days, int activityDays) async {
+    final g = _garmin();
+    var nDays = 0;
+    for (var i = days - 1; i >= 0; i--) {
+      final m = await g.fetchDaily(addDays(today, -i));
+      if (hasMetricData(m)) {
+        store.section('metrics')[m['date'] as String] = m;
+        nDays++;
+      }
+    }
+    final acts = await g.fetchActivities(addDays(today, -(activityDays - 1)), today);
+    acts.forEach(_storeActivity);
+    return 'Garmin: $nDays Tage, ${acts.length} Aktivitäten';
+  }
+
+  /// Liest Werte anderer Uhren (Amazfit/Zepp, Suunto, …) aus Health Connect.
+  Future<String> _syncHealthConnect(int days) async {
+    final pts = await health!.read(addDays(today, -(days - 1)), clock());
+    final daily = aggregateDaily(pts);
+    final section = store.section('hc_metrics');
+    daily.forEach((d, m) => section[d] = m);
+    final acts = workoutsToActivities(pts);
+    acts.forEach(_storeActivity);
+    final devices = {for (final p in pts) sourceLabel(p.source)}.toList()..sort();
+    return 'Health Connect: ${daily.length} Tage, ${acts.length} Trainings'
+        '${devices.isEmpty ? '' : ' (${devices.join(', ')})'}';
+  }
+
+  /// Health Connect einrichten: Erlaubnis holen, einschalten, gleich synchronisieren.
+  Future<String?> connectHealthConnect() async {
+    final h = health;
+    if (h == null) return 'Health Connect gibt es nur auf Android.';
+    if (!await h.available()) {
+      await h.install();
+      return 'Health Connect ist nicht installiert. Bitte aus dem Play Store installieren und erneut verbinden.';
+    }
+    final ok = await h.authorize();
+    if (!ok) return 'Keine Erlaubnis erteilt. In Health Connect unter App-Berechtigungen „EchoWP Trainer“ freigeben.';
+    store.setSetting('health_connect', true);
+    notifyListeners();
+    await sync();
+    return null;
+  }
+
+  void disconnectHealthConnect() {
+    store.setSetting('health_connect', false);
+    notifyListeners();
   }
 
   // ---------------------------------------------------------------- Score
@@ -348,7 +418,31 @@ class AppState extends ChangeNotifier {
   NutritionTargets? nutritionFor(DateTime d) {
     final w = latestWeight(d);
     if (w == null || w <= 0) return null;
-    return calculateNutrition(w, Map<String, dynamic>.from(store.setting('profile') as Map), trainingLoad(d), today: d);
+    final profile = Map<String, dynamic>.from(store.setting('profile') as Map);
+    final base = calculateNutrition(w, profile, trainingLoad(d), today: d);
+    if (profile['kcal_from_burn'] == false) return base;
+    final burn = burnFor(d);
+    if (burn == null) return base;
+    return withBurn(base, restKcal: burn.$1, activeKcal: burn.$2, goal: (profile['goal'] as String?) ?? 'halten');
+  }
+
+  /// Ruhe- und Aktivkalorien der Uhr für einen Tag. Für heute zählen die Ruhekalorien als
+  /// Schnitt der letzten 7 vollen Tage (der laufende Tag ist noch nicht komplett),
+  /// die Aktivkalorien so weit, wie sie bisher angefallen sind.
+  (double, double)? burnFor(DateTime d) {
+    final m = metricsFor(iso(d));
+    final active = (m?['active_kcal'] as num?)?.toDouble();
+    double? rest;
+    if (iso(d) == iso(today)) {
+      final past = [
+        for (var i = 1; i <= 7; i++)
+          if ((metricsFor(iso(addDays(d, -i)))?['rest_kcal'] as num?) case final v? when v > 0) v.toDouble()
+      ];
+      if (past.isNotEmpty) rest = past.reduce((a, b) => a + b) / past.length;
+    }
+    rest ??= (m?['rest_kcal'] as num?)?.toDouble();
+    if (rest == null || rest <= 0) return null;
+    return (rest, active ?? 0);
   }
 
   // ---------------------------------------------------------------- Essen / Food Memory

@@ -78,14 +78,56 @@ class _DataScreenState extends State<DataScreen> {
             const SizedBox(height: 8),
             Wrap(spacing: 8, runSpacing: 8, children: [
               FilledButton.icon(
-                onPressed: st.busy || !st.garminConfigured ? null : () => st.sync(),
+                onPressed: st.busy || !st.anySource ? null : () => st.sync(),
                 icon: const Icon(Icons.sync),
                 label: const Text('Jetzt synchronisieren'),
               ),
               OutlinedButton(
-                onPressed: st.busy || !st.garminConfigured ? null : () => st.sync(days: 14, activityDays: 60),
+                onPressed: st.busy || !st.anySource ? null : () => st.sync(days: 14, activityDays: 60),
                 child: const Text('14 Tage nachladen'),
               ),
+            ]),
+          ]),
+        ),
+        SectionCard(
+          title: 'Weitere Uhren (Amazfit, Suunto …)',
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(
+              st.healthConnectOn
+                  ? 'Health Connect ist verbunden. Die App liest Schritte, Kalorien, Schlaf, Ruhepuls, HRV und '
+                      'Trainings aller Apps, die dorthin schreiben. Garmin-Werte haben Vorrang, doppelte Trainings '
+                      'werden zusammengefasst.'
+                  : 'Amazfit und Suunto haben keine offene Schnittstelle für Privatnutzer. Ihre Apps schreiben aber '
+                      'nach Health Connect. Dafür in der Zepp- bzw. Suunto-App (Profil, verbundene Apps) Health Connect '
+                      'einschalten und hier verbinden.',
+              style: const TextStyle(color: echoMuted, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              if (!st.healthConnectOn)
+                FilledButton.icon(
+                  onPressed: st.busy || st.health == null
+                      ? null
+                      : () async {
+                          final msg = await st.connectHealthConnect();
+                          if (context.mounted) showSnack(context, msg ?? 'Health Connect verbunden');
+                        },
+                  icon: const Icon(Icons.watch),
+                  label: const Text('Health Connect verbinden'),
+                )
+              else ...[
+                OutlinedButton.icon(
+                  onPressed: st.busy
+                      ? null
+                      : () async {
+                          final msg = await st.connectHealthConnect();
+                          if (msg != null && context.mounted) showSnack(context, msg);
+                        },
+                  icon: const Icon(Icons.lock_open),
+                  label: const Text('Berechtigungen prüfen'),
+                ),
+                TextButton(onPressed: st.disconnectHealthConnect, child: const Text('Trennen')),
+              ],
             ]),
           ]),
         ),
@@ -179,6 +221,15 @@ class _DataScreenState extends State<DataScreen> {
                 DropdownMenuItem(value: 'jan', child: Text('Jans Excel-Formel (26 × kg)')),
               ],
               onChanged: (v) => setProfile('nutrition_mode', v),
+            ),
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: profile['kcal_from_burn'] != false,
+              activeThumbColor: echoYellow,
+              title: const Text('Kalorienziel aus dem Verbrauch der Uhr'),
+              subtitle: const Text('Ruhekalorien + Aktivkalorien, dazu der Zu-/Abschlag des Ziels. '
+                  'Ohne Uhrdaten gilt der Rechner oben.'),
+              onChanged: (v) => setProfile('kcal_from_burn', v),
             ),
           ]),
         ),

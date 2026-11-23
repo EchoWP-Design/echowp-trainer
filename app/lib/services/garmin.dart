@@ -147,6 +147,14 @@ Map<String, dynamic> parseDaily(String day, dynamic sleep, dynamic hrv, dynamic 
       findValue(s, ['averageStressLevel', 'avgStressLevel', 'overallStressLevel']);
   m['stress_avg'] = (stress != null && stress >= 0) ? stress : null;
   m['steps'] = findValue(s, ['totalSteps', 'steps'])?.toInt();
+  // Kalorien: Ruhe (Grundumsatz) + Aktiv = Gesamt, wie in Garmin Connect
+  final cal = s is Map ? s['calories'] : null;
+  m['rest_kcal'] = (findValue(cal, ['burnedResting']) ?? findValue(s, ['bmrKilocalories']))?.round();
+  m['active_kcal'] = (findValue(cal, ['burnedActive']) ?? findValue(s, ['activeKilocalories']))?.round();
+  m['total_kcal'] = (findValue(cal, ['burnedTotal']) ?? findValue(s, ['totalKilocalories']))?.round();
+  if (m['total_kcal'] == null && m['rest_kcal'] != null && m['active_kcal'] != null) {
+    m['total_kcal'] = (m['rest_kcal'] as int) + (m['active_kcal'] as int);
+  }
   final bb = pickDay(bodyBattery, day);
   final wake = findValue(sleep, ['sleepEndTimestampGMT']);
   m['body_battery'] = bodyBatteryAt(bb, wake) ??
