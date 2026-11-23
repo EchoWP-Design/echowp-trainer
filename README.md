@@ -1,4 +1,4 @@
-<p align="center"><img src="trainer/static/icons/app-icon-512.png" width="120" alt="EchoWP Trainer"></p>
+<p align="center"><img src="branding/echowp-banner.png" alt="EchoWP" width="433"></p>
 
 # EchoWP Trainer
 
@@ -6,6 +6,8 @@ Persönlicher Performance-Coach auf Basis deiner Garmin-Daten. Die Idee stammt a
 Video [„Garmin + Claude = mein eigener Performance-Coach“](https://www.youtube.com/watch?v=QeuDmuqpIpE):
 Garmin sammelt die Daten, die App macht daraus einen Tagesplan, eine Trainingswoche und
 einen Coach, mit dem man reden kann.
+
+**Aktuelle Version: 1.0.0** (Android-App) – Download unter [Releases](https://github.com/EchoWP-Design/echowp-trainer/releases/latest)
 
 ![Dashboard](docs/img/heute.png)
 
