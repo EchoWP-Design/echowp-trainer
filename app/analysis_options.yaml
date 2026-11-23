@@ -1,0 +1,3 @@
+# Bewusst ohne flutter_lints (pub.dev im Arbeitsumfeld eingeschränkt); Standardregeln von Dart.
+analyzer:
+  exclude: [build/**, tool/live_check.dart]

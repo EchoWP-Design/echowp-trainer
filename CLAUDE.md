@@ -5,5 +5,6 @@
 - Training: Functional Fitness, Eigengewicht, Kettlebell, Gewichte, Steigungsgehen auf dem Laufband, Märsche/Rucking. Wegen Kniebeschwerden kaum Laufen, keine Sprünge, keine tiefen Ausfallschritte.
 - Ernährung: Modus "jan" muss Jans Excel-Formeln exakt behalten (Test `tests/test_nutrition.py`).
 - Garmin: zuerst Personal API (`trainer/garmin/personal_api.py`), Reserve `garminconnect`, Import FIT/Export.
-- Keine Build-Toolchain im Frontend: reines HTML/CSS/JS in `trainer/static/`.
-- Tests: `pytest` (keine Netzwerkzugriffe in Tests).
+- Web-Oberfläche ohne Build-Toolchain: reines HTML/CSS/JS in `trainer/static/`.
+- Android-App in `app/` (Flutter, läuft ohne Server). Logik in `app/lib/logic/` muss zur Python-Logik passen (gleiche Formeln, Tests in `app/test/`). Plattformordner nicht ins Repo, Build nur in GitHub Actions. Schlüssel nie ins Repo.
+- Tests: `pytest` und `cd app && flutter test` (keine Netzwerkzugriffe in Tests).

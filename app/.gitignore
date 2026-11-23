@@ -1,0 +1,18 @@
+.dart_tool/
+.pub-cache/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.iml
+.idea/
+dist/
+# Plattformordner werden im Build per "flutter create" erzeugt
+/android/
+/ios/
+/linux/
+/macos/
+/web/
+/windows/
+# Signierschlüssel nur über GitHub-Secrets
+keystore/
+*.jks

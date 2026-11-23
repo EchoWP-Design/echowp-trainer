@@ -47,7 +47,33 @@ Mit `ANTHROPIC_API_KEY` formuliert Claude Briefing, Wochenplan und Chat-Antworte
 (Standardmodell `claude-opus-5-5`, änderbar über `TRAINER_MODEL`). Ohne Schlüssel läuft
 alles regelbasiert weiter. Der Wochenplan kommt dann direkt aus dem Planer.
 
-## Starten
+## Android-App (ohne Server)
+
+Die App in `app/` läuft komplett auf dem Handy: Sie holt die Garmin-Daten direkt über die
+Personal API, rechnet Score, Plan und Ernährung selbst und spricht für den KI-Coach direkt mit
+Claude. Daten bleiben auf dem Handy, die Schlüssel liegen im sicheren Speicher von Android.
+
+**Installieren**
+1. Unter [Releases](https://github.com/EchoWP-Design/echowp-trainer/releases) die neueste
+   `EchoWP-Trainer.apk` auf dem Handy herunterladen und öffnen. Android fragt einmal, ob der
+   Browser Apps installieren darf: erlauben.
+2. App öffnen → Reiter **Daten** → Garmin Personal API Key einfügen → Speichern.
+   Die App lädt sofort die letzten 14 Tage.
+3. Im selben Reiter den Anthropic-API-Key für den KI-Coach einfügen.
+4. Profil (Größe, Geburtsjahr, Geschlecht, Gewicht) eintragen, dann unter **Woche** planen.
+
+Beim Öffnen synchronisiert die App automatisch, wenn der letzte Abruf älter als eine Stunde ist.
+
+**Bauen:** GitHub Actions (`.github/workflows/android.yml`) erzeugt die Android-Ordner per
+`flutter create`, passt sie mit `app/tool/patch_platforms.py` an, prüft (`flutter analyze`,
+`flutter test`) und veröffentlicht die APKs als Release. Für Updates ohne Neuinstallation
+braucht das Repo die Secrets `ANDROID_KEYSTORE_B64` und `ANDROID_KEYSTORE_PASSWORD`
+(derselbe Schlüssel wie bei EchoWP-Mail), sonst entsteht eine Testversion mit Debug-Signatur.
+
+Lokal: `cd app && flutter pub get && flutter test`. Mit echten Schlüsseln:
+`GARMIN_PERSONAL_API_KEY=… ANTHROPIC_API_KEY=… dart run tool/live_check.dart`.
+
+## Server-Version starten
 
 ### Docker (Server, NAS, Raspberry Pi)
 
