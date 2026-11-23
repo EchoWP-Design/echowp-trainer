@@ -107,7 +107,7 @@ Map<String, Map<String, dynamic>> aggregateDaily(List<HcPoint> points) {
   for (final m in out.values) {
     if (m['rest_kcal'] == null && m['total_kcal'] is num && m['active_kcal'] is num) {
       final rest = (m['total_kcal'] as num) - (m['active_kcal'] as num);
-      if (rest > 0) m['rest_kcal'] = rest.round();
+      if (rest >= 500) m['rest_kcal'] = rest.round(); // sonst nur Teilwerte einer App
     }
   }
   return out;

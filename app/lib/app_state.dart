@@ -454,28 +454,46 @@ class AppState extends ChangeNotifier {
     final profile = Map<String, dynamic>.from(store.setting('profile') as Map);
     final base = calculateNutrition(w, profile, trainingLoad(d), today: d);
     if (profile['kcal_from_burn'] == false) return base;
-    final burn = burnFor(d);
-    if (burn == null) return base;
+    final burn = burnFor(d, minRest: 0.6 * estimatedBmr(w, profile, d));
+    if (burn == null) {
+      // Uhrdaten fehlen oder sind unplausibel (z. B. nur ein Teil des Tages): Formel gilt
+      if (metricsFor(iso(d))?['active_kcal'] != null || metricsFor(iso(d))?['rest_kcal'] != null) {
+        base.hints.insert(0, 'Uhrdaten heute unvollständig oder unplausibel, Ziel deshalb nach Formel.');
+      }
+      return base;
+    }
     return withBurn(base, restKcal: burn.$1, activeKcal: burn.$2, goal: (profile['goal'] as String?) ?? 'halten');
+  }
+
+  /// Grundumsatz zur Plausibilitätsprüfung: Mifflin-St Jeor, ohne Profil grob 22 kcal je kg.
+  double estimatedBmr(double weightKg, Map<String, dynamic> profile, DateTime d) {
+    final h = profile['height_cm'], y = profile['birth_year'], s = profile['sex'];
+    if (h is num && y is num && (s == 'm' || s == 'w')) {
+      return mifflinStJeor(weightKg, h.toDouble(), d.year - y.toInt(), s as String);
+    }
+    return 22 * weightKg;
   }
 
   /// Ruhe- und Aktivkalorien der Uhr für einen Tag. Für heute zählen die Ruhekalorien als
   /// Schnitt der letzten 7 vollen Tage (der laufende Tag ist noch nicht komplett),
-  /// die Aktivkalorien so weit, wie sie bisher angefallen sind.
-  (double, double)? burnFor(DateTime d) {
+  /// die Aktivkalorien so weit, wie sie bisher angefallen sind. Ruhewerte unter [minRest]
+  /// (Teil-Tage, fehlende Daten einer App) werden nicht verwendet.
+  (double, double)? burnFor(DateTime d, {double minRest = 0}) {
     final m = metricsFor(iso(d));
     final active = (m?['active_kcal'] as num?)?.toDouble();
+    double? plausible(dynamic v) => v is num && v > 0 && v >= minRest ? v.toDouble() : null;
     double? rest;
     if (iso(d) == iso(today)) {
       final past = [
         for (var i = 1; i <= 7; i++)
-          if ((metricsFor(iso(addDays(d, -i)))?['rest_kcal'] as num?) case final v? when v > 0) v.toDouble()
+          if (plausible(metricsFor(iso(addDays(d, -i)))?['rest_kcal']) case final v?) v
       ];
       if (past.isNotEmpty) rest = past.reduce((a, b) => a + b) / past.length;
+    } else {
+      rest = plausible(m?['rest_kcal']);
     }
-    rest ??= (m?['rest_kcal'] as num?)?.toDouble();
-    if (rest == null || rest <= 0) return null;
-    return (rest, active ?? 0);
+    if (rest == null) return null;
+    return (rest, active != null && active > 0 ? active : 0);
   }
 
   // ---------------------------------------------------------------- Essen / Food Memory
@@ -570,7 +588,11 @@ class AppState extends ChangeNotifier {
     for (final a in activities(start, d)) {
       acts.putIfAbsent(a['date'] as String, () => []).add(a);
     }
-    return dailyGrid(d, _range('metrics', start, d), _range('journal', start, d), acts);
+    final metrics = {
+      for (var i = 0; i < 28; i++)
+        if (metricsFor(iso(addDays(start, i))) case final m?) iso(addDays(start, i)): m
+    };
+    return dailyGrid(d, metrics, _range('journal', start, d), acts);
   }
 
   List<WeekGoal> goalsFor(DateTime d) {

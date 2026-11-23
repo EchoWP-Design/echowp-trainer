@@ -250,6 +250,10 @@ class GarminClient {
       throw GarminError('Garmin hat den Personal API Key abgelehnt (abgelaufen oder gelöscht?). '
           'Neuen Key unter connect.garmin.com/app/settings/personalApiToken erstellen.');
     }
+    if (resp.statusCode == 404) {
+      throw GarminError('Diesen Garmin Personal API Key gibt es nicht mehr (gelöscht oder ersetzt). '
+          'Neuen Key unter connect.garmin.com/app/settings/personalApiToken erstellen und unter „Daten“ eintragen.');
+    }
     if (resp.statusCode != 200) throw GarminError('Garmin-Token konnte nicht geholt werden (HTTP ${resp.statusCode}).');
     _token = resp.body.trim();
     _exp = _jwtExp(_token!);
@@ -285,7 +289,10 @@ class GarminClient {
     try {
       return await get(path, params);
     } on GarminError catch (e) {
-      if (e.message.contains('abgelehnt') || e.message.contains('nicht erreichbar')) rethrow;
+      if (e.message.contains('abgelehnt') ||
+          e.message.contains('nicht erreichbar') ||
+          e.message.contains('Token') ||
+          e.message.contains('API Key')) rethrow;
       return null;
     }
   }

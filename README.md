@@ -7,7 +7,7 @@ Video [„Garmin + Claude = mein eigener Performance-Coach“](https://www.youtu
 Garmin sammelt die Daten, die App macht daraus einen Tagesplan, eine Trainingswoche und
 einen Coach, mit dem man reden kann.
 
-**Aktuelle Version: 1.4.0** (Android-App) – Download unter [Releases](https://github.com/EchoWP-Design/echowp-trainer/releases/latest)
+**Aktuelle Version: 1.4.1** (Android-App) – Download unter [Releases](https://github.com/EchoWP-Design/echowp-trainer/releases/latest)
 
 ![Dashboard](docs/img/heute.png)
 

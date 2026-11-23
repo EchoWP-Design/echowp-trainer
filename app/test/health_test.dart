@@ -4,6 +4,8 @@ import 'package:echowp_trainer/services/garmin.dart';
 import 'package:echowp_trainer/services/health_connect.dart';
 import 'package:echowp_trainer/services/storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 
 final _now = DateTime(2026, 11, 23, 18, 0);
 const _zepp = 'com.huami.watch.hmwatchmanager';
@@ -141,6 +143,39 @@ void main() {
       expect(t.kcal, 2500);
       st.store.setSetting('profile', {'weight_kg': 80, 'nutrition_mode': 'jan', 'kcal_from_burn': false});
       expect(st.nutritionFor(st.today)!.kcal, 2080);
+    });
+  });
+
+  test('Gelöschter Garmin-Key: Sync meldet es, statt still 0 Tage zu laden', () async {
+    final client = MockClient((req) async =>
+        http.Response('{"message":"Personal API Key with ID x does not exist.","error":"NotFoundException"}', 404));
+    final st = AppState(Store.memory(), MemorySecrets({'garmin_key': 'alt'}), httpClient: client, clock: () => _now);
+    await st.init();
+    expect(await st.sync(), isNull);
+    expect(st.lastError, contains('gibt es nicht mehr'));
+    expect(st.lastSync!['ok'], isFalse);
+  });
+
+  group('Unplausible Uhrdaten', () {
+    test('Ruhe 9 + Aktiv 5 kcal: Formel statt 12-kcal-Ziel, mit Hinweis', () {
+      final st = AppState(Store.memory(), MemorySecrets(), clock: () => _now);
+      st.store.setSetting('profile', {'weight_kg': 84, 'nutrition_mode': 'wissenschaft', 'goal': 'abnehmen'});
+      st.store.section('hc_metrics')['2026-11-23'] = {'date': '2026-11-23', 'rest_kcal': 9, 'active_kcal': 5};
+      st.store.setSetting('health_connect', true);
+      final st2 = AppState(st.store, MemorySecrets(), health: _FakeHealth(const []), clock: () => _now);
+      final t = st2.nutritionFor(st2.today)!;
+      expect(t.fromBurn, isFalse);
+      expect(t.kcal, greaterThan(1500));
+      expect(t.carbsG, greaterThan(0));
+      expect(t.hints.first, contains('unvollständig'));
+    });
+
+    test('Teilwerte aus Health Connect ergeben keine Ruhekalorien', () {
+      final d = aggregateDaily([
+        HcPoint('TOTAL_CALORIES_BURNED', 14, _t(23, 0), _t(23, 18), _zepp),
+        HcPoint('ACTIVE_ENERGY_BURNED', 5, _t(23, 0), _t(23, 18), _zepp),
+      ])['2026-11-23']!;
+      expect(d.containsKey('rest_kcal'), isFalse);
     });
   });
 

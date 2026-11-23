@@ -6,7 +6,7 @@ import 'disciplines.dart';
 import 'dates.dart';
 
 const dailyHabits = [
-  ('garmin', 'Garmin synchronisiert'),
+  ('garmin', 'Uhr synchronisiert'),
   ('sleep7', 'Mehr als 7 h Schlaf'),
   ('journal', 'Journal ausgefüllt'),
   ('training', 'Bewegt (Training)'),
