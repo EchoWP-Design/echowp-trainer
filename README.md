@@ -22,15 +22,19 @@ einen Coach, mit dem man reden kann.
   langer Marsch mit Rucksack. Knieschonend: kaum Laufen, keine Sprünge. 4-Wochen-Zyklus
   mit Deload, Entlastungswoche bei niedriger Bereitschaft. Plant um Termine aus deinem
   Kalender herum.
-- **Kalender**: Der Plan steht als abonnierbarer iCal-Feed bereit (Google Kalender →
-  „Per URL hinzufügen“).
+- **Kalender** (Server-Version): Der Plan steht als abonnierbarer iCal-Feed bereit
+  (Google Kalender → „Per URL hinzufügen“).
 - **Chat** mit dem Coach, auch um den Wochenplan umzubauen („Montag Termin, verschieb das“).
-- **Journal** mit Gefühlsfeedback, Gewicht, Korrektur der Garmin-Werte, RPE und Feedback
-  zu jedem Training sowie **Food Memory** (ohne Kalorienzählen).
+- **Journal** mit Gefühlsfeedback (Stimmung, Energie, Motivation, Muskelkater, Stress),
+  Gewicht, Notizen sowie RPE und Feedback zu jedem Training.
+- **Essen mit Kalorienzählen** (ab App 1.1): Barcode-Scanner für ganze Packungen, Portionen
+  oder Gramm (Open Food Facts), KI-Schätzung aus Freitext, **Food Memory** für häufige
+  Lebensmittel mit einem Tipp, Tagesbilanz von Kalorien und Makros gegen deine Ziele.
 - **Ernährungsziele** nach Mifflin-St Jeor oder nach Jans Excel-Formel, siehe
   [docs/ERNAEHRUNG.md](docs/ERNAEHRUNG.md).
 - **Morgenroutine, Wochenziele und Streaks** als kleine Gamification.
-- Läuft als **Web-App (PWA)** auf Handy und Desktop, installierbar auf dem Homescreen.
+- Läuft als **Android-App** direkt auf dem Handy (ohne Server) oder als **Web-App (PWA)**
+  mit eigenem Server.
 
 ![Woche](docs/img/woche.png)
 
