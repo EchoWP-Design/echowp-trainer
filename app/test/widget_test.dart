@@ -212,6 +212,7 @@ void main() {
           protein: 55)
     ]);
     st.saveJournal('2026-11-23', {'weight_kg': 84.0, 'mood': 6});
+    st.store.setSetting('notice_ok', true);
     await tester.pumpWidget(TrainerApp(state: st));
     await tester.pumpAndSettle();
     expect(find.text('BEREITSCHAFT'), findsOneWidget);
@@ -222,5 +223,23 @@ void main() {
       await tester.pumpAndSettle();
     }
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('Hinweis beim ersten Start muss bestätigt werden', (tester) async {
+    final st = await makeState();
+    await tester.pumpWidget(TrainerApp(state: st));
+    await tester.pumpAndSettle();
+    expect(find.text('Bevor es losgeht'), findsOneWidget);
+    expect(find.textContaining('kein Medizinprodukt'), findsOneWidget);
+    await tester.tap(find.text('Verstanden'));
+    await tester.pumpAndSettle();
+    expect(find.text('Bevor es losgeht'), findsNothing);
+    expect(st.store.setting('notice_ok'), isTrue);
+    await tester.tap(find.text('Daten').last);
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('Open-Source-Lizenzen'), 400,
+        scrollable: find.byType(Scrollable).hitTestable().first);
+    expect(find.text('Open-Source-Lizenzen'), findsOneWidget);
+    expect(find.text('Nach Updates suchen'), findsOneWidget);
   });
 }

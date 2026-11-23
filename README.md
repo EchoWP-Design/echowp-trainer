@@ -7,7 +7,7 @@ Video [„Garmin + Claude = mein eigener Performance-Coach“](https://www.youtu
 Garmin sammelt die Daten, die App macht daraus einen Tagesplan, eine Trainingswoche und
 einen Coach, mit dem man reden kann.
 
-**Aktuelle Version: 1.1.0** (Android-App) – Download unter [Releases](https://github.com/EchoWP-Design/echowp-trainer/releases/latest)
+**Aktuelle Version: 1.1.1** (Android-App) – Download unter [Releases](https://github.com/EchoWP-Design/echowp-trainer/releases/latest)
 
 ![Dashboard](docs/img/heute.png)
 
@@ -73,6 +73,10 @@ Claude. Daten bleiben auf dem Handy, die Schlüssel liegen im sicheren Speicher 
 oder von Hand. Das Food Memory merkt sich alles Gegessene für den nächsten Eintrag mit einem Tipp.
 Unbekannte Barcodes tippst du einmal ab, danach kennt die App das Produkt.
 
+**Updates (ab 1.1.1):** Die App prüft einmal am Tag auf GitHub, ob es eine neue Version gibt,
+und zeigt dann oben einen Hinweis. „Laden“ öffnet die APK im Browser, danach über die
+vorhandene App installieren. Manuell: Reiter Daten → Updates.
+
 Beim Öffnen synchronisiert die App automatisch, wenn der letzte Abruf älter als eine Stunde ist.
 
 **Bauen:** GitHub Actions (`.github/workflows/android.yml`) erzeugt die Android-Ordner per
@@ -136,6 +140,33 @@ EchoWP Corporate Design: Gelb `#FFD400` und Schwarz `#0A0A0A`, Schrift Inter, Wo
 einer Kettlebell als Produktzeichen. Dunkel Gelb auf Schwarz, hell schwarze Akzente mit
 schwarzen Kopfleisten.
 
-## Hinweis
+## Rechtliches
 
-Die App ersetzt keine ärztliche Beratung. Bei Schmerzen, Krankheit oder Warnzeichen pausieren.
+**Kein Medizinprodukt.** EchoWP Trainer ist ein privates Trainingswerkzeug und ersetzt keine
+ärztliche Beratung, Diagnose oder Behandlung. Bereitschafts-Score, Trainingspläne,
+KI-Antworten und Kalorienwerte sind Schätzungen und können falsch sein. Bei Schmerzen,
+Krankheit, Brustschmerz, Schwindel oder anderen Warnzeichen Training abbrechen und ärztlich
+abklären lassen. Nutzung auf eigene Verantwortung.
+
+**Datenschutz.** Die Android-App speichert alle Daten (Garmin-Werte, Journal, Essen, Pläne)
+nur auf dem Handy, die Schlüssel im sicheren Speicher von Android. Daten gehen nur an:
+- **Garmin** (Abruf deiner eigenen Daten über die Personal API),
+- **Anthropic** (nur wenn ein Anthropic-Key eingetragen ist: Briefing, Wochenplan, Chat und
+  KI-Schätzung beim Essen; dabei werden die dafür nötigen Trainings-, Gesundheits- und
+  Essensdaten übertragen),
+- **Open Food Facts** (nur der gescannte Barcode).
+
+Es gibt keine eigenen Server, keine Werbung und kein Tracking. Die App ist für den
+persönlichen Gebrauch gebaut. Wer sie für andere Personen anbietet, braucht eine eigene
+Datenschutzerklärung, weil Gesundheitsdaten besonders geschützt sind (Art. 9 DSGVO).
+
+**Quellen und Lizenzen**
+- Produktdaten zum Barcode: [Open Food Facts](https://world.openfoodfacts.org), Datenbank unter
+  [Open Database License (ODbL)](https://opendatacommons.org/licenses/odbl/1-0/), Inhalte unter
+  [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/).
+- Schrift Inter unter der SIL Open Font License (`app/assets/fonts/OFL-LICENSE.txt`).
+- Quellcode dieses Repos: [MIT-Lizenz](LICENSE).
+
+**Marken.** Garmin, Garmin Connect und Body Battery sind Marken von Garmin Ltd., Claude ist eine
+Marke von Anthropic. EchoWP Trainer ist ein unabhängiges Projekt und mit keinem dieser
+Unternehmen verbunden.

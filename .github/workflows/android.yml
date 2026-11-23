@@ -63,7 +63,7 @@ jobs:
       - name: Automatische Tests
         run: flutter test --reporter expanded
       - name: APK bauen (je Prozessortyp, verkleinert)
-        run: flutter build apk --release --split-per-abi --target-platform android-arm64,android-arm --build-number=${{ github.run_number }}
+        run: flutter build apk --release --split-per-abi --target-platform android-arm64,android-arm --build-number=${{ github.run_number }} --dart-define=ECHOWP_BUILD=${{ github.run_number }}
       - name: APKs prüfen (Größe, versionCode, Signatur)
         run: |
           mkdir -p dist

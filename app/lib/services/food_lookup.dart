@@ -13,6 +13,7 @@ class Product {
   final String unit; // g oder ml
   final double? servingG; // Portionsgröße laut Packung
   final double kcal100, protein100, carbs100, fat100, fiber100;
+  final String source; // off = Open Food Facts, manuell = selbst abgetippt
 
   const Product({
     required this.code,
@@ -26,6 +27,7 @@ class Product {
     this.carbs100 = 0,
     this.fat100 = 0,
     this.fiber100 = 0,
+    this.source = 'off',
   });
 
   String get title => brand.isEmpty ? name : '$name ($brand)';
@@ -42,6 +44,7 @@ class Product {
         'carbs100': carbs100,
         'fat100': fat100,
         'fiber100': fiber100,
+        'source': source,
       };
 
   factory Product.fromJson(Map<String, dynamic> j) => Product(
@@ -56,6 +59,7 @@ class Product {
         carbs100: ((j['carbs100'] as num?) ?? 0).toDouble(),
         fat100: ((j['fat100'] as num?) ?? 0).toDouble(),
         fiber100: ((j['fiber100'] as num?) ?? 0).toDouble(),
+        source: (j['source'] as String?) ?? 'off',
       );
 
   /// Eintrag für eine Menge in g/ml.

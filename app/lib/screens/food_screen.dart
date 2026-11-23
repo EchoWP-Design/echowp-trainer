@@ -8,6 +8,7 @@ import '../logic/food.dart';
 import '../main.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/legal.dart';
 import 'scanner_screen.dart';
 
 /// Essen: Kalorien zählen mit Food Memory und KI-Schätzung aus Freitext.
@@ -96,6 +97,8 @@ class _FoodScreenState extends State<FoodScreen> {
                 label: const Text('Selbst eintragen'),
               ),
             ]),
+            const SizedBox(height: 8),
+            const Text(offAttribution, style: TextStyle(color: echoMuted, fontSize: 10)),
           ]),
         ),
         SectionCard(

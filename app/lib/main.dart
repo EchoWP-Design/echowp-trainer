@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'app_state.dart';
 import 'screens/coach_screen.dart';
@@ -12,6 +13,7 @@ import 'screens/today_screen.dart';
 import 'screens/week_screen.dart';
 import 'services/storage.dart';
 import 'theme.dart';
+import 'widgets/legal.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,7 +61,15 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _autoSync());
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final st = context.read<AppState>();
+      if (st.store.setting('notice_ok') != true) {
+        await showFirstStartNotice(context);
+        st.store.setSetting('notice_ok', true);
+      }
+      _autoSync();
+      st.checkForUpdate();
+    });
   }
 
   @override
@@ -97,6 +107,23 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
                     onPressed: () => setState(() => st.lastError = null),
                     child: const Text('OK', style: TextStyle(color: echoYellow)),
                   )
+                ],
+              ),
+            if (st.showUpdateBanner)
+              MaterialBanner(
+                backgroundColor: echoYellow,
+                leading: const Icon(Icons.system_update, color: echoBlack),
+                content: Text('Update verfügbar: ${st.update!.label}',
+                    style: const TextStyle(color: echoBlack, fontWeight: FontWeight.w700)),
+                actions: [
+                  TextButton(
+                    onPressed: st.dismissUpdate,
+                    child: const Text('Später', style: TextStyle(color: echoBlack)),
+                  ),
+                  TextButton(
+                    onPressed: () => openUpdate(context, st),
+                    child: const Text('Laden', style: TextStyle(color: echoBlack, fontWeight: FontWeight.w900)),
+                  ),
                 ],
               ),
             Expanded(child: IndexedStack(index: _tab, children: pages)),
@@ -157,5 +184,15 @@ class EchoHeader extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Lädt die neue APK über den Browser; Android fragt danach, ob installiert werden soll.
+Future<void> openUpdate(BuildContext context, AppState st) async {
+  final u = st.update;
+  if (u == null) return;
+  final ok = await launchUrl(Uri.parse(u.apkUrl ?? u.pageUrl), mode: LaunchMode.externalApplication);
+  if (!ok && context.mounted) {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Browser konnte nicht geöffnet werden.')));
   }
 }

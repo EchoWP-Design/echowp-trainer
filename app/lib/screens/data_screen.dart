@@ -7,8 +7,10 @@ import '../app_state.dart';
 import '../logic/dates.dart';
 import '../main.dart';
 import '../services/coach.dart';
+import '../services/updater.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/legal.dart';
 
 class DataScreen extends StatefulWidget {
   const DataScreen({super.key});
@@ -227,6 +229,35 @@ class _DataScreenState extends State<DataScreen> {
             ),
           ]),
         ),
+        SectionCard(
+          title: 'Updates',
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Installiert: v$appVersion${appBuild > 0 ? ' (Build $appBuild)' : ''}',
+                style: const TextStyle(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 4),
+            Text(
+              st.updateChecking
+                  ? 'Suche nach Updates …'
+                  : st.updateError ??
+                      (st.update != null ? 'Update verfügbar: ${st.update!.label}' : 'Die App prüft einmal am Tag.'),
+              style: const TextStyle(color: echoMuted, fontSize: 13),
+            ),
+            const SizedBox(height: 8),
+            Wrap(spacing: 8, runSpacing: 8, children: [
+              if (st.update != null)
+                FilledButton.icon(
+                  onPressed: () => openUpdate(context, st),
+                  icon: const Icon(Icons.download),
+                  label: const Text('Update laden'),
+                ),
+              OutlinedButton(
+                onPressed: st.updateChecking ? null : () => st.checkForUpdate(manual: true),
+                child: const Text('Nach Updates suchen'),
+              ),
+            ]),
+          ]),
+        ),
+        const SectionCard(title: 'Rechtliches', child: LegalSection()),
       ],
     );
   }

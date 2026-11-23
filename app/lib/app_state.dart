@@ -15,6 +15,7 @@ import 'services/coach.dart';
 import 'services/food_lookup.dart';
 import 'services/garmin.dart';
 import 'services/storage.dart';
+import 'services/updater.dart';
 
 const _kindWeight = {'kraft': 1.0, 'cardio': 1.0, 'intervall': 1.0, 'lauf': 1.0, 'gehen': 0.8, 'mobility': 0.3};
 
@@ -84,6 +85,37 @@ class AppState extends ChangeNotifier {
       busyLabel = null;
       notifyListeners();
     }
+  }
+
+  // ---------------------------------------------------------------- Updates
+  ReleaseInfo? update;
+  String? updateError;
+  bool updateChecking = false;
+
+  bool get showUpdateBanner => update != null && store.setting('update_dismissed') != update!.tag;
+
+  /// Prüft auf eine neue App-Version. Automatisch höchstens einmal am Tag.
+  Future<void> checkForUpdate({bool manual = false}) async {
+    if (!manual && store.setting('update_checked') == iso(today)) return;
+    updateChecking = true;
+    updateError = null;
+    notifyListeners();
+    try {
+      final r = await Updater(client: httpClient).latest();
+      update = r != null && Updater.isNewer(r) ? r : null;
+      store.setSetting('update_checked', iso(today));
+      if (manual && update != null) store.section('settings').remove('update_dismissed');
+    } catch (e) {
+      if (manual) updateError = e.toString();
+    } finally {
+      updateChecking = false;
+      notifyListeners();
+    }
+  }
+
+  void dismissUpdate() {
+    if (update != null) store.setSetting('update_dismissed', update!.tag);
+    notifyListeners();
   }
 
   // ---------------------------------------------------------------- Daten

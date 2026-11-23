@@ -5,6 +5,7 @@ import '../logic/food.dart';
 import '../services/food_lookup.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
+import '../widgets/legal.dart';
 
 /// Kamera-Ansicht: liefert den ersten erkannten Produkt-Barcode (EAN/UPC) zurück.
 class ScannerScreen extends StatefulWidget {
@@ -123,6 +124,11 @@ Future<FoodEntry?> chooseAmount(BuildContext context, Product p, String date) {
                 'Pro 100 ${p.unit}: ${fmtNum(p.kcal100)} kcal · P ${fmtNum(p.protein100, digits: 1)} · '
                 'K ${fmtNum(p.carbs100, digits: 1)} · F ${fmtNum(p.fat100, digits: 1)} g',
                 style: const TextStyle(color: echoMuted, fontSize: 12)),
+            if (p.source == 'off')
+              const Padding(
+                padding: EdgeInsets.only(top: 4),
+                child: Text(offAttribution, style: TextStyle(color: echoMuted, fontSize: 10)),
+              ),
             const SizedBox(height: 8),
             RadioGroup<String>(
               groupValue: mode,
@@ -218,6 +224,7 @@ Future<Product?> enterProduct(BuildContext context, String code) async {
       carbs100: n('carbs') ?? 0,
       fat100: n('fat') ?? 0,
       fiber100: n('fiber') ?? 0,
+      source: 'manuell',
     );
   }
   for (final x in c.values) {
