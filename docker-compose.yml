@@ -1,0 +1,10 @@
+services:
+  trainer:
+    build: .
+    container_name: echowp-trainer
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data

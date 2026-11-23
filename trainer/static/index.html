@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EchoWP Trainer</title>
+<meta name="theme-color" content="#0A0A0A">
+<meta name="description" content="Persönlicher Performance-Coach mit Garmin-Daten">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="/static/icons/app-icon.svg">
+<link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+<link rel="stylesheet" href="/static/app.css">
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="#heute" aria-label="EchoWP Trainer">
+    <img src="/static/icons/logo.svg" alt="" width="36" height="36">
+    <span class="wordmark">Echo<span class="block">Trainer</span></span>
+  </a>
+  <div class="sync">
+    <span id="syncState" class="sync-state" title="Garmin-Verbindung">–</span>
+    <button id="syncBtn" class="btn btn-ghost" type="button" aria-label="Alles neu laden">
+      <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.6M20 4v5h-5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Sync</span>
+    </button>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Bereiche">
+  <a href="#heute" data-tab="heute">Heute</a>
+  <a href="#woche" data-tab="woche">Woche</a>
+  <a href="#journal" data-tab="journal">Journal</a>
+  <a href="#coach" data-tab="coach">Coach</a>
+  <a href="#daten" data-tab="daten">Daten</a>
+</nav>
+
+<main id="view" tabindex="-1"></main>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
