@@ -12,7 +12,8 @@ const healthNotice = 'EchoWP Trainer ist kein Medizinprodukt und ersetzt keine �
 
 const privacyNotice = 'Alle Daten bleiben auf diesem Handy, Schlüssel im sicheren Speicher von Android. '
     'Health Connect wird nur gelesen. Daten gehen nur an Garmin (Abruf deiner Daten), an Anthropic (nur mit eingetragenem Key: Briefing, Wochenplan, '
-    'Chat und KI-Schätzung beim Essen, dabei die nötigen Trainings-, Gesundheits- und Essensdaten) und an '
+    'Chat und KI-Schätzung beim Essen, dabei die nötigen Trainings-, Gesundheits- und Essensdaten sowie '
+    'Essensfotos; Fotos speichert die App nicht und löscht sie nach dem Senden sofort) und an '
     'Open Food Facts (nur der gescannte Barcode). Keine eigenen Server, keine Werbung, kein Tracking.';
 
 const offAttribution =

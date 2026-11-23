@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../app_state.dart';
 import '../logic/dates.dart';
 import '../logic/food.dart';
+import '../services/photo.dart';
 import '../main.dart';
 import '../theme.dart';
 import '../widgets/common.dart';
@@ -87,6 +89,11 @@ class _FoodScreenState extends State<FoodScreen> {
                 label: const Text('Barcode scannen'),
               ),
               FilledButton.icon(
+                onPressed: st.busy ? null : () => _photo(st, d),
+                icon: const Icon(Icons.photo_camera, size: 18),
+                label: const Text('Foto schätzen'),
+              ),
+              FilledButton.icon(
                 onPressed: st.busy ? null : () => _estimate(st, d),
                 icon: const Icon(Icons.auto_awesome, size: 18),
                 label: const Text('Mit KI schätzen'),
@@ -98,6 +105,11 @@ class _FoodScreenState extends State<FoodScreen> {
               ),
             ]),
             const SizedBox(height: 8),
+            const Text(
+                'Fotos werden nicht gespeichert: Die App schickt das Bild einmal zur Auswertung an Claude '
+                'und löscht es danach sofort vom Handy.',
+                style: TextStyle(color: echoMuted, fontSize: 11)),
+            const SizedBox(height: 4),
             const Text(offAttribution, style: TextStyle(color: echoMuted, fontSize: 10)),
           ]),
         ),
@@ -239,6 +251,45 @@ class _FoodScreenState extends State<FoodScreen> {
     }
     final res = await st.estimateFood(text);
     if (res == null || !mounted) return;
+    await _review(st, d, res);
+  }
+
+  /// Essen fotografieren und von Claude schätzen lassen. Das Bild liegt nur kurz im
+  /// Zwischenspeicher der App und wird gelöscht, bevor die Auswertung startet.
+  Future<void> _photo(AppState st, String d) async {
+    if (!st.coachEnabled) {
+      showSnack(context, 'Für die Foto-Schätzung den Anthropic-API-Key unter „Daten“ eintragen.');
+      return;
+    }
+    final List<int> bytes;
+    try {
+      final shot = await ImagePicker().pickImage(
+        source: ImageSource.camera,
+        maxWidth: 1568,
+        maxHeight: 1568,
+        imageQuality: 80,
+        requestFullMetadata: false,
+      );
+      if (shot == null) return;
+      try {
+        bytes = stripJpegMetadata(await shot.readAsBytes());
+      } finally {
+        await deletePhoto(shot.path);
+      }
+    } catch (e) {
+      if (mounted) showSnack(context, 'Kamera nicht verfügbar: $e');
+      return;
+    }
+    final res = await st.estimateFood(_text.text.trim(), image: bytes);
+    if (res == null || !mounted) return;
+    if (res.$1.isEmpty) {
+      showSnack(context, res.$2.isNotEmpty ? res.$2 : 'Auf dem Foto war kein Essen zu erkennen.');
+      return;
+    }
+    await _review(st, d, res);
+  }
+
+  Future<void> _review(AppState st, String d, (List<FoodEntry>, String) res) async {
     final (items, note) = res;
     final selected = List<bool>.filled(items.length, true);
     final ok = await showDialog<bool>(

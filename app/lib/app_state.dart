@@ -539,21 +539,21 @@ class AppState extends ChangeNotifier {
   }
 
   /// Claude schätzt Kalorien/Makros aus Freitext; das Ergebnis wird erst nach Bestätigung gespeichert.
-  Future<(List<FoodEntry>, String)?> estimateFood(String text) {
+  Future<(List<FoodEntry>, String)?> estimateFood(String text, {List<int>? image}) {
     final coach = _coach;
     if (coach == null) {
       lastError = 'Für die KI-Schätzung den Anthropic-API-Key unter „Daten“ eintragen.';
       notifyListeners();
       return Future.value(null);
     }
-    return _run('Claude schätzt die Kalorien …', () async {
+    return _run(image != null ? 'Claude wertet das Foto aus …' : 'Claude schätzt die Kalorien …', () async {
       final known = [
         for (final m in foodMemory(limit: 60))
           {
             for (final k in ['name', 'amount', 'kcal', 'protein', 'carbs', 'fat', 'fiber']) k: m[k]
           }
       ];
-      final (items, note) = await coach.estimateFood(text, known);
+      final (items, note) = await coach.estimateFood(text, known, image: image);
       return (
         [
           for (final i in items) FoodEntry.fromJson({...i, 'id': '', 'date': iso(today), 'time': '', 'source': 'ki'})

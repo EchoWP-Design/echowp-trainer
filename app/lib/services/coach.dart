@@ -239,14 +239,32 @@ class CoachClient {
   }
 
   /// Schätzt Kalorien und Makros aus Freitext. [known] sind gemerkte Lebensmittel mit Werten.
-  Future<(List<Map<String, dynamic>>, String)> estimateFood(String text, List<Map<String, dynamic>> known) async {
+  /// Schätzt eine Mahlzeit aus Text oder Foto. Das Foto geht nur in diese eine Anfrage
+  /// (Base64 im Speicher) und wird von der App nirgends abgelegt.
+  Future<(List<Map<String, dynamic>>, String)> estimateFood(String text, List<Map<String, dynamic>> known,
+      {List<int>? image, String mediaType = 'image/jpeg'}) async {
+    final what = image != null
+        ? 'Auf dem Foto ist meine Mahlzeit. Erkenne alle Lebensmittel und Getränke und schätze die Mengen '
+            '(Teller- und Besteckgröße, Verpackungen als Maßstab). '
+            '${text.isNotEmpty ? 'Mein Hinweis dazu: $text. ' : ''}'
+            'Ist kein Essen zu sehen, gib eine leere Liste zurück und sag es in note.'
+        : 'Mahlzeit: $text';
     final prompt = 'Schätze Kalorien und Makronährstoffe für diese Mahlzeit. Zerlege sie in einzelne '
         'Lebensmittel mit realistischer Menge (deutsche Portionsgrößen, Werte wie BLS/Packungsangaben). '
         'Wenn ein Lebensmittel in meinen gemerkten Lebensmitteln steht, übernimm dessen Werte.\n\n'
-        'Mahlzeit: $text\n\nGemerkte Lebensmittel:\n${jsonEncode(known)}';
+        '$what\n\nGemerkte Lebensmittel:\n${jsonEncode(known)}';
+    final content = image == null
+        ? prompt
+        : [
+            {
+              'type': 'image',
+              'source': {'type': 'base64', 'media_type': mediaType, 'data': base64Encode(image)}
+            },
+            {'type': 'text', 'text': prompt},
+          ];
     final raw = await call([
-      {'role': 'user', 'content': prompt}
-    ], maxTokens: 3000, schema: foodSchema);
+      {'role': 'user', 'content': content}
+    ], maxTokens: 3000, effort: image != null ? 'medium' : 'low', schema: foodSchema);
     final data = jsonDecode(raw) as Map<String, dynamic>;
     return (
       [for (final i in data['items'] as List) Map<String, dynamic>.from(i as Map)],

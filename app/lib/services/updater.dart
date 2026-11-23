@@ -9,7 +9,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 /// Version dieser App, muss zu `version:` in pubspec.yaml passen (Test prüft das).
-const appVersion = '1.3.0';
+const appVersion = '1.4.0';
 
 /// Build-Nummer (GitHub-Lauf), beim Bauen per `--dart-define=ECHOWP_BUILD=…` gesetzt.
 const appBuild = int.fromEnvironment('ECHOWP_BUILD');

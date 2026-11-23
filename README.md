@@ -7,7 +7,7 @@ Video [„Garmin + Claude = mein eigener Performance-Coach“](https://www.youtu
 Garmin sammelt die Daten, die App macht daraus einen Tagesplan, eine Trainingswoche und
 einen Coach, mit dem man reden kann.
 
-**Aktuelle Version: 1.3.0** (Android-App) – Download unter [Releases](https://github.com/EchoWP-Design/echowp-trainer/releases/latest)
+**Aktuelle Version: 1.4.0** (Android-App) – Download unter [Releases](https://github.com/EchoWP-Design/echowp-trainer/releases/latest)
 
 ![Dashboard](docs/img/heute.png)
 
@@ -31,7 +31,7 @@ einen Coach, mit dem man reden kann.
 - **Journal** mit Gefühlsfeedback (Stimmung, Energie, Motivation, Muskelkater, Stress),
   Gewicht, Notizen sowie RPE und Feedback zu jedem Training.
 - **Essen mit Kalorienzählen** (ab App 1.1): Barcode-Scanner für ganze Packungen, Portionen
-  oder Gramm (Open Food Facts), KI-Schätzung aus Freitext, **Food Memory** für häufige
+  oder Gramm (Open Food Facts), KI-Schätzung aus Freitext oder **Foto** (ab 1.4), **Food Memory** für häufige
   Lebensmittel mit einem Tipp, Tagesbilanz von Kalorien und Makros gegen deine Ziele.
 - **Mehrere Uhren** (ab App 1.2): neben Garmin auch Amazfit (Zepp-App), Suunto und andere
   Uhren über Android Health Connect. Schritte, Kalorien, Schlaf, Ruhepuls, HRV und Trainings
@@ -98,6 +98,10 @@ Claude. Daten bleiben auf dem Handy, die Schlüssel liegen im sicheren Speicher 
 (Open Food Facts, ganze Packung, Portion oder Gramm), per Freitext mit KI-Schätzung durch Claude
 oder von Hand. Das Food Memory merkt sich alles Gegessene für den nächsten Eintrag mit einem Tipp.
 Unbekannte Barcodes tippst du einmal ab, danach kennt die App das Produkt.
+**Foto schätzen (ab 1.4):** Essen fotografieren, Claude erkennt Lebensmittel und Mengen und
+schlägt Einträge vor. Das Foto wird nicht gespeichert: Die App liest es einmal ein, entfernt
+Metadaten wie den Aufnahmeort, löscht die Datei sofort vom Handy und schickt das Bild nur für
+diese eine Schätzung an Claude.
 
 **Updates (ab 1.1.1):** Die App prüft einmal am Tag auf GitHub, ob es eine neue Version gibt,
 und zeigt dann oben einen Hinweis. „Laden“ öffnet die APK im Browser, danach über die
@@ -185,7 +189,8 @@ nur auf dem Handy, die Schlüssel im sicheren Speicher von Android. Daten gehen 
 - **Health Connect** auf dem Handy (nur lesen, nur wenn verbunden; bleibt auf dem Gerät),
 - **Anthropic** (nur wenn ein Anthropic-Key eingetragen ist: Briefing, Wochenplan, Chat und
   KI-Schätzung beim Essen; dabei werden die dafür nötigen Trainings-, Gesundheits- und
-  Essensdaten übertragen),
+  Essensdaten übertragen, bei der Foto-Schätzung auch das Foto ohne Metadaten; die App
+  speichert Fotos nicht und löscht sie sofort nach dem Einlesen),
 - **Open Food Facts** (nur der gescannte Barcode).
 
 Es gibt keine eigenen Server, keine Werbung und kein Tracking. Die App ist für den
