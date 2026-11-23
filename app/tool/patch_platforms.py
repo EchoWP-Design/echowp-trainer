@@ -9,6 +9,8 @@ import re
 root = pathlib.Path(__file__).resolve().parent.parent
 KEYSTORE = root / "keystore" / "echowp-release.jks"
 PW = os.environ.get("ANDROID_KEYSTORE_PASSWORD", "")
+_alias_file = root / "keystore" / "alias.txt"
+ALIAS = _alias_file.read_text().strip() if _alias_file.exists() else "echowp"
 
 
 def patch(path: pathlib.Path, fn):
@@ -40,7 +42,7 @@ def gradle_kts(t: str) -> str:
                 '        create("release") {\n'
                 '            storeFile = file("../../keystore/echowp-release.jks")\n'
                 f'            storePassword = "{PW}"\n'
-                '            keyAlias = "echowp"\n'
+                f'            keyAlias = "{ALIAS}"\n'
                 f'            keyPassword = "{PW}"\n'
                 "        }\n"
                 "    }\n"

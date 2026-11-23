@@ -47,7 +47,12 @@ jobs:
           fi
           mkdir -p keystore
           printf '%s' "$KS_B64" | tr -d ' \r\n' | base64 -d > keystore/echowp-release.jks
-          keytool -list -keystore keystore/echowp-release.jks -storepass "$KS_PW" -alias echowp > /dev/null || { echo "::error::Keystore oder Passwort ungültig"; exit 1; }
+          keytool -list -keystore keystore/echowp-release.jks -storepass "$KS_PW" > /dev/null || { echo "::error::Keystore oder Passwort ungültig"; exit 1; }
+          # Schlüsselname (Alias) aus der Datei lesen, damit jede EchoWP-Schlüsseldatei passt
+          ALIAS=$(keytool -list -v -keystore keystore/echowp-release.jks -storepass "$KS_PW" | sed -nE 's/^Alias name: (.*)$/\1/p; s/^Aliasname: (.*)$/\1/p' | head -1)
+          [ -n "$ALIAS" ] || { echo "::error::Kein Schlüssel in der Datei gefunden"; exit 1; }
+          echo "Schlüssel-Alias: $ALIAS"
+          echo "$ALIAS" > keystore/alias.txt
           echo "signed=true" >> "$GITHUB_OUTPUT"
       - name: Plattform anpassen
         env:

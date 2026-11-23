@@ -68,7 +68,7 @@ Beim Öffnen synchronisiert die App automatisch, wenn der letzte Abruf älter al
 `flutter create`, passt sie mit `app/tool/patch_platforms.py` an, prüft (`flutter analyze`,
 `flutter test`) und veröffentlicht die APKs als Release. Für Updates ohne Neuinstallation
 braucht das Repo die Secrets `ANDROID_KEYSTORE_B64` und `ANDROID_KEYSTORE_PASSWORD`
-(derselbe Schlüssel wie bei EchoWP-Mail), sonst entsteht eine Testversion mit Debug-Signatur.
+(jede EchoWP-Schlüsseldatei, der Schlüsselname wird automatisch erkannt), sonst entsteht eine Testversion mit Debug-Signatur.
 
 Lokal: `cd app && flutter pub get && flutter test`. Mit echten Schlüsseln:
 `GARMIN_PERSONAL_API_KEY=… ANTHROPIC_API_KEY=… dart run tool/live_check.dart`.
