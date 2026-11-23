@@ -16,7 +16,11 @@ Familie und Freunde weitergibt.
 - 1.4.0 (Build 10): Essen fotografieren → Claude schätzt. Foto wird nach dem Einlesen gelöscht
   (inkl. Original vor Verkleinerung), EXIF/GPS entfernt (`app/lib/services/photo.dart`).
 
+- 1.4.1 (Build 11): Bugfix „12 kcal Ziel“ (unplausible Uhr-Ruhewerte → Formel mit Hinweis),
+  gelöschter Garmin-Key (Token HTTP 404) wird gemeldet statt still 0 Tage zu laden.
+
 ## Offen / nächster Schritt
+- Jan muss einen neuen Garmin Personal API Key eintragen (alter gelöscht).
 - Jans Rückmeldung auf dem Handy: echter Barcode-Scan, Health Connect mit Amazfit/Suunto,
   Foto-Schätzung mit echtem Essen, Migration der Disziplinen.
 - Server-/Web-Version (`trainer/`, Python) hat noch feste Ziele und keine Disziplinen,
@@ -40,7 +44,7 @@ Familie und Freunde weitergibt.
 - Health Connect und Kamera nur mit Fakes/Beispieldaten getestet (kein Gerät).
 
 ## Zustand
-- Branch `main`, letzter Code-Commit `eb784e3` (Lint-Fix), Build grün:
-  Release `app-v1.4.0-build-10`. Tests: 59 grün (`cd app && flutter test`).
+- Branch `main`, letzter Code-Commit `09a282c`, Build grün:
+  Release `app-v1.4.1-build-11`. Tests: 62 grün (`cd app && flutter test`).
 - Flutter 3.50.1 ließ sich in dieser Sitzung lokal nutzen (storage.googleapis.com und
   pub.dev erreichbar) → `flutter analyze --no-fatal-infos lib test` und `flutter test` lokal.
