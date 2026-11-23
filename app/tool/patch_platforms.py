@@ -80,6 +80,9 @@ def main_activity(t: str) -> str:
 
 def gradle_kts(t: str) -> str:
     t = re.sub(r"minSdk\s*=\s*[^\n]+", "minSdk = 26", t)
+    # Lint-Absturz in einem Plugin (ExifDataCopier.java, Fehler im Lint-Werkzeug) bricht sonst den Release-Build ab
+    if "checkReleaseBuilds" not in t:
+        t = re.sub(r"(\nandroid\s*\{)", r"\1\n    lint {\n        checkReleaseBuilds = false\n        abortOnError = false\n    }", t, count=1)
     if KEYSTORE.exists() and PW:
         if 'create("release")' not in t:
             signing = (
